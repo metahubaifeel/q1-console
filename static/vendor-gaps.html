@@ -1,0 +1,632 @@
+<title>Q1 能力缺口清单</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@600&family=IBM+Plex+Sans+SC:wght@400;500;600&display=swap">
+
+<style>
+  /* 冷色中性底，色相偏向控制台那套 hue-222 蓝黑；强调色沿用项目自己的余烬橙。
+     不用米白 + 衬线那一套 —— 这是一份要交给对方工程师的工程文档。 */
+  :root {
+    --ground: #f4f6f8;
+    --surface: #ffffff;
+    --sunken: #eef1f4;
+    --ink: #0f1218;
+    --mute: #59626f;
+    --faint: #838d9b;
+    --line: #dee3e9;
+    --line-soft: #eaedf1;
+    --acc: #b8430f;
+    --acc-lt: #e85d1c;
+    --bad: #b42318;
+    --bad-bg: #fdf0ee;
+    --ok: #0a6b45;
+    --ok-bg: #eaf6f0;
+    --warn: #8a5300;
+    --warn-bg: #fdf5e6;
+    --fd: "IBM Plex Sans Condensed", "IBM Plex Sans SC", system-ui, sans-serif;
+    --f: "IBM Plex Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    --m: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+    --r: 10px;
+    --r-sm: 6px;
+    --gap: 22px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0a0c11;
+      --surface: #12151c;
+      --sunken: #171b23;
+      --ink: #e7eaef;
+      --mute: #98a1b1;
+      --faint: #6f7887;
+      --line: #232834;
+      --line-soft: #1c212a;
+      --acc: #f97a3d;
+      --acc-lt: #e85d1c;
+      --bad: #ff8b7d;
+      --bad-bg: #251413;
+      --ok: #4ade80;
+      --ok-bg: #0e2119;
+      --warn: #fbbf24;
+      --warn-bg: #241c0c;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #0a0c11;
+    --surface: #12151c;
+    --sunken: #171b23;
+    --ink: #e7eaef;
+    --mute: #98a1b1;
+    --faint: #6f7887;
+    --line: #232834;
+    --line-soft: #1c212a;
+    --acc: #f97a3d;
+    --acc-lt: #e85d1c;
+    --bad: #ff8b7d;
+    --bad-bg: #251413;
+    --ok: #4ade80;
+    --ok-bg: #0e2119;
+    --warn: #fbbf24;
+    --warn-bg: #241c0c;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--f);
+    font-size: 15px;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding-block: 40px 72px;
+    padding-inline: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+  }
+  @media (max-width: 640px) { .wrap { padding-inline: 18px; padding-block: 28px 56px; gap: 32px; } }
+
+  /* ── 报头 ── */
+  header { display: flex; flex-direction: column; gap: 14px; }
+  .eyebrow {
+    font-family: var(--fd);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+    color: var(--acc);
+  }
+  h1 {
+    font-size: clamp(30px, 5vw, 46px);
+    line-height: 1.15;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin: 0;
+    text-wrap: balance;
+  }
+  .lede { font-size: 17px; color: var(--mute); max-width: 62ch; margin: 0; }
+  .ident {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 10px;
+    padding-top: 6px;
+  }
+  .ident span {
+    font-family: var(--m);
+    font-size: 11.5px;
+    color: var(--mute);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-sm);
+    padding: 4px 9px;
+    white-space: nowrap;
+  }
+  .ident b { color: var(--ink); font-weight: 500; }
+
+  /* ── 总量 ── */
+  /* 6 块，固定 3 列 = 两行整齐的服务一行、话题一行。
+     用 auto-fit 会在 1080px 里排成 5+1，最后一块孤零零占一行。 */
+  .tally { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  @media (max-width: 760px) { .tally { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 460px) { .tally { grid-template-columns: 1fr; } }
+  .tally div {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r);
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+  .tally .n {
+    font-family: var(--m);
+    font-size: 27px;
+    font-weight: 500;
+    line-height: 1.15;
+    font-variant-numeric: tabular-nums;
+  }
+  .tally .k { font-size: 12.5px; color: var(--mute); }
+  .tally .n.bad { color: var(--bad); }
+  .tally .n.ok { color: var(--ok); }
+
+  /* ── 章节 ── */
+  section { display: flex; flex-direction: column; gap: 16px; }
+  .head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+          border-top: 1px solid var(--line); padding-top: 18px; }
+  .head .pri {
+    font-family: var(--fd); font-size: 13px; font-weight: 600;
+    letter-spacing: .1em; color: var(--acc);
+  }
+  h2 { font-size: 21px; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
+  .head p { margin: 0; color: var(--mute); font-size: 13.5px; flex-basis: 100%; max-width: 70ch; }
+
+  /* ── 缺口条目 ── */
+  .item {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r);
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 11px;
+  }
+  .item > h3 {
+    margin: 0; font-size: 16.5px; font-weight: 600; line-height: 1.4;
+    display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+  }
+  .item > h3 .no {
+    font-family: var(--m); font-size: 12px; color: var(--faint);
+    font-variant-numeric: tabular-nums;
+  }
+  .field { display: grid; grid-template-columns: 52px 1fr; gap: 4px 12px; align-items: start; }
+  @media (max-width: 560px) { .field { grid-template-columns: 1fr; gap: 2px; } }
+  .field dt {
+    font-family: var(--fd); font-size: 11.5px; font-weight: 600;
+    letter-spacing: .09em; text-transform: uppercase; color: var(--faint);
+    padding-top: 3px;
+  }
+  .field dd { margin: 0; min-width: 0; }
+  .field dd p { margin: 0; }
+  .field dd p + p { margin-top: 5px; }
+  .ask { color: var(--ink); font-weight: 500; }
+
+  code, .mono {
+    font-family: var(--m);
+    font-size: 12.5px;
+    background: var(--sunken);
+    border-radius: 4px;
+    padding: 1px 5px;
+    overflow-wrap: anywhere;
+  }
+  .ask code { background: var(--bad-bg); }
+
+  /* ── 表格 ── */
+  .scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  caption {
+    caption-side: top; text-align: left; padding: 12px 16px 10px;
+    font-size: 13px; color: var(--mute); border-bottom: 1px solid var(--line-soft);
+  }
+  th, td { text-align: left; padding: 7px 16px; border-bottom: 1px solid var(--line-soft); vertical-align: top; }
+  thead th {
+    font-family: var(--fd); font-size: 11px; font-weight: 600;
+    letter-spacing: .09em; text-transform: uppercase; color: var(--faint);
+    border-bottom: 1px solid var(--line); white-space: nowrap;
+  }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.nm { font-family: var(--m); font-size: 12.5px; white-space: nowrap; }
+  .chip {
+    display: inline-block; font-family: var(--fd); font-size: 11px; font-weight: 600;
+    letter-spacing: .06em; padding: 1px 7px; border-radius: 999px; white-space: nowrap;
+  }
+  .chip.no { background: var(--bad-bg); color: var(--bad); }
+  .chip.ok { background: var(--ok-bg); color: var(--ok); }
+  .chip.wn { background: var(--warn-bg); color: var(--warn); }
+
+  /* ── 复现方法 ── */
+  pre {
+    font-family: var(--m); font-size: 12.5px; line-height: 1.65;
+    background: var(--sunken); border: 1px solid var(--line);
+    border-radius: var(--r); padding: 14px 16px; margin: 0;
+    overflow-x: auto; color: var(--ink);
+  }
+  pre .c { color: var(--faint); }
+  ol.steps { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 9px; }
+  ol.steps li { padding-left: 2px; }
+  ol.steps li::marker { font-family: var(--m); font-size: 12px; color: var(--acc); }
+
+  .note {
+    border-left: 2px solid var(--acc-lt);
+    padding: 2px 0 2px 14px;
+    color: var(--mute);
+    font-size: 13.5px;
+    max-width: 72ch;
+  }
+  .note b { color: var(--ink); font-weight: 600; }
+
+  footer {
+    border-top: 1px solid var(--line);
+    padding-top: 16px;
+    color: var(--faint);
+    font-size: 12.5px;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  a { color: var(--acc); }
+  :focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; border-radius: 3px; }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">控制台待补 · 实测定稿</div>
+    <h1>Q1 能力缺口清单</h1>
+    <p class="lede">
+      控制台这一侧已经跑通：实时视频、双向对讲、动作库、仪表、急停、安全门。
+      剩下的空白全部落在机器人一侧。下面每条都是在这台机器上当场测出来的，
+      并附了复现命令 —— 贵方工程师可以直接跑一遍对照。
+    </p>
+    <div class="ident">
+      <span><b>SN</b> Q100024C700398</span>
+      <span><b>固件</b> test-qy2502_1_v2d0-soc0-v0.3.0.0.5-R-202608301125</span>
+      <span><b>SoC</b> RK3576 · Linux 6.1.141</span>
+      <span><b>模式</b> standard</span>
+      <span><b>实测日</b> 2026-09-14</span>
+    </div>
+  </header>
+
+  <div class="tally">
+    <div><span class="n">257</span><span class="k">广告出来的服务</span></div>
+    <div><span class="n ok">212</span><span class="k">真能调通</span></div>
+    <div><span class="n bad">7</span><span class="k">广告了但无人 serve</span></div>
+    <div><span class="n">80</span><span class="k">话题</span></div>
+    <div><span class="n ok">58</span><span class="k">有发布者</span></div>
+    <div><span class="n bad">22</span><span class="k">声明了没人发</span></div>
+  </div>
+
+  <p class="note">
+    <b>判定口径。</b>「能调」= 真建 client、<code>spin</code> 到图谱稳定后 <code>service_is_ready()</code> 为真；
+    只看 <code>ros2 service list</code> 里有名字是不算的，这台机器上两者差别很大。
+    同理话题的「有发布者」是暖机 11.6 秒、数字不再增长之后才数的 ——
+    建完节点立刻数会把 <code>/aima/hal/audio/capture</code> 这种活得好好的话题数成 0 个发布者。
+  </p>
+
+  <section>
+    <div class="head">
+      <span class="pri">P0</span>
+      <h2>卡住功能，不做就等于少一块</h2>
+      <p>这四条直接决定总控台上有没有东西可看、可点。</p>
+    </div>
+
+    <div class="item">
+      <h3><span class="no">01</span>全身关节状态缺失，数据孪生只能画上半身</h3>
+      <dl class="field">
+        <dt>现象</dt>
+        <dd>
+          <p>机器人唯一在发的关节状态话题是 <code>/upper_body_joint_states</code>，
+             里面<b>只有 10 个关节</b>：左右肩 pitch/roll/yaw、左右肘、腰 roll、腰 yaw。</p>
+          <p>两条腿的髋/膝/踝、脖子、手腕、腰 pitch —— 一个都没有。
+             同时 <code>/tf</code> 里<b>只有一条变换</b>：<code>odom → base_link</code>，
+             没有任何肢体坐标系，所以也没法从 TF 树补回来。</p>
+          <p>结果就是孪生体只能显示底盘位姿加两条胳膊，腿部永远是初始姿态 ——
+             用户看到的是一个「站着不动腿」的机器人。</p>
+        </dd>
+        <dt>证据</dt>
+        <dd><p><code>/aima/hal/joint/state</code>（<span class="mono">aimdk_msgs/msg/JointStateArray</span>）
+            已经声明，但发布者数量为 <b>0</b>。这条正是会带全身关节的那条。</p></dd>
+        <dt>要什么</dt>
+        <dd><p class="ask">发布 <code>/aima/hal/joint/state</code>，或另行指定一条全身关节状态话题
+            （含关节名 + 位置，最好带速度/力矩）；并给出完整的 TF 树，
+            至少覆盖 <code>base_link → 各连杆</code>。</p></dd>
+      </dl>
+    </div>
+
+    <div class="item">
+      <h3><span class="no">02</span>导航 / 建图 / SLAM 整条栈没有在跑</h3>
+      <dl class="field">
+        <dt>现象</dt>
+        <dd>
+          <p>四个状态话题的发布者全是 0：
+             <code>/aima/algo/navi/state</code>、<code>/aima/map/state</code>、
+             <code>/aima/map/build_state</code>、<code>/slam_state</code>。
+             服务侧 <code>GetMapList</code> 广告了出来但无人 serve。</p>
+          <p>所以总控台上的「房间图 / 雷达扇区 / 导航点」三块只能是空的 ——
+             不是接线问题，是这台机器当前没加载这些能力。</p>
+        </dd>
+        <dt>要什么</dt>
+        <dd><p class="ask">提供启动导航栈的方式（哪个服务/脚本、什么前置条件），
+            并把 <code>GetMapList</code> 等一系列地图服务 serve 起来。
+            另外请说明建图与定位分别怎么进、怎么退。</p></dd>
+      </dl>
+    </div>
+
+    <div class="item">
+      <h3><span class="no">03</span>雷达 / 激光 / 点云在 ROS 图里完全看不到</h3>
+      <dl class="field">
+        <dt>现象</dt>
+        <dd><p>80 个话题里，唯一能匹配到 <span class="mono">scan</span> 的是
+            <code>/robot/scan/bluetooth</code>（蓝牙扫描，跟测距无关）。
+            没有任何 <code>/scan</code>、<code>/points</code>、<code>/livox/*</code>、
+            深度点云一类的话题。</p></dd>
+        <dt>要什么</dt>
+        <dd><p class="ask">说明测距数据从哪出：话题名、消息类型、坐标系、频率；
+            如果传感器存在但走的是非 ROS 通路，也请说明怎么取。
+            这是「雷达图」这一类界面能不能做的前提。</p></dd>
+      </dl>
+    </div>
+
+    <div class="item">
+      <h3><span class="no">04</span>表情与灯光的三个服务无人 serve</h3>
+      <dl class="field">
+        <dt>现象</dt>
+        <dd><p><code>PlayLight</code>、<code>SetNeckLight</code>、<code>PlayEmotionByStr</code>
+            三个服务广告在图上，但都没有 server；配套的
+            <code>/aima/hal/neck_light/state</code> 也没有发布者。
+            目前只有 <code>LedStripCommand</code> 是通的，而它覆盖不到颈部灯。</p></dd>
+        <dt>要什么</dt>
+        <dd><p class="ask">把这三个 serve 起来，或明确告知替代接口。
+            脖子灯是这台机器最直观的状态显示位，缺了很可惜。</p></dd>
+      </dl>
+    </div>
+  </section>
+
+  <section>
+    <div class="head">
+      <span class="pri">P1</span>
+      <h2>影响体验与可维护性</h2>
+      <p>不挡功能，但会让控制台显得残缺，或者出问题时无从下手。</p>
+    </div>
+
+    <div class="item">
+      <h3><span class="no">05</span>自录动作没有编号，播放通路要资源路径</h3>
+      <dl class="field">
+        <dt>现象</dt>
+        <dd><p><code>GetCustomMotionList</code> 能调通（实测库里确有 1 条自录动作），
+            但播放通路按接口文档填参数实调 <code>PlayCustomMotion</code>
+            返回 <code>code=5 INVALID</code>，动作一次都没播出来。
+            内置动作走 <code>SetMcPresetMotion</code> + 编号（3001–3051，实测 16 个）是通的；
+            两条路的行为不一致，界面上那个「自录动作」按钮只能先禁掉。</p></dd>
+        <dt>要什么</dt>
+        <dd><p class="ask">给出 <code>PlayCustomMotion</code> 的完整调用约定：
+            <code>resource_path</code> 该填什么形态（是列表返回的路径原文，还是要拼目录？
+            要不要传动作编号？）、<code>code=5</code> 的确切含义与触发条件、
+            和 <code>SetMcPresetMotion</code> 是否互斥、播完有没有回调。</p></dd>
+      </dl>
+    </div>
+
+    <div class="item">
+      <h3><span class="no">06</span>麦克风阵列选路恒为 0</h3>
+      <dl class="field">
+        <dt>现象</dt>
+        <dd><p>采集口是 48 kHz / 8 声道交错：前 6 路是麦克风，后 2 路是回采参考。
+            但 <code>GetMicSourceRequest</code> 返回的选路恒为 0，
+            没有波束成形或降噪档位可选。机器人说话时对讲里能听到自己的回声。</p></dd>
+        <dt>要什么</dt>
+        <dd><p class="ask">开放 <code>SetMicSourceRequest</code> 的可用取值与语义
+            （指向哪一路、是否启用波束成形/降噪），以及各档位的适用场景。</p></dd>
+      </dl>
+    </div>
+
+    <div class="item">
+      <h3><span class="no">07</span>舵机状态与跌倒预警区域拿不到</h3>
+      <dl class="field">
+        <dt>现象</dt>
+        <dd><p><code>/aima/hal/servo/state</code>（<span class="mono">ServoStatus</span>）和
+            <code>/fall_guard/danger_regions</code>（<span class="mono">PoseArray</span>）
+            都声明了但没人发。后者尤其在意 ——
+            危险区域本来是可以在控制台上直观画出来的安全信息。</p></dd>
+        <dt>要什么</dt>
+        <dd><p class="ask">发布这两条；<code>danger_regions</code> 请说明坐标系与区域语义。</p></dd>
+      </dl>
+    </div>
+
+    <div class="item">
+      <h3><span class="no">08</span>各 SoC 的进程信息没有，负载高时无从定位</h3>
+      <dl class="field">
+        <dt>现象</dt>
+        <dd><p><code>/aima/hds/process/info/soc0</code>、<code>soc1</code>、<code>soc2</code>
+            三条都无人发布。而这台机器实测长期 <b>CPU 89–95%</b>、负载 20–36、
+            平衡控制器 <code>mc_main</code> 常年 78–99%，Agent 进程常驻约 150% CPU / 1.5 GB。
+            我们知道「很挤」，但看不到是谁在挤。</p>
+        <dt>要什么</dt>
+        <dd><p class="ask">发布这三条进程信息，或提供任何可查询各 SoC 负载/进程的接口。
+            对我们来说，这是「机器人为什么偶尔站不稳」最直接的线索。</p></dd>
+      </dl>
+    </div>
+  </section>
+
+  <section>
+    <div class="head">
+      <span class="pri">P2</span>
+      <h2>语义澄清即可，不必动代码</h2>
+      <p>这些东西我们看到名字但不确定含义，一句话说明就能收尾。</p>
+    </div>
+
+    <div class="item">
+      <h3><span class="no">09</span>几个语义待确认的接口</h3>
+      <dl class="field">
+        <dt>待确认</dt>
+        <dd>
+          <p><code>/aima/hal/joint/info</code>（<span class="mono">JointInfoArray</span>）
+             是在发的 —— 它是关节元数据（名称/限位）还是别的？和上面的
+             <code>joint/state</code> 是什么关系？</p>
+          <p><code>/aima/mc/custom/joint/command</code>、<code>/aima/robot/config_control</code>
+             声明了但没人发，是预留还是已废弃？</p>
+        </dd>
+      </dl>
+    </div>
+
+    <div class="item">
+      <h3><span class="no">10</span>整块能力都是静默的</h3>
+      <dl class="field">
+        <dt>现象</dt>
+        <dd>
+          <p><b>自动充电</b>：<code>/aima/algo/charge_point/recognition_state</code>、
+             <code>/aima/algo/charge_point/sit_state</code> 均无人发布。</p>
+          <p><b>跟随</b>：<code>/aima/algo/follow/state</code>、
+             <code>/perception/follow_candidates</code> 均无人发布。</p>
+          <p><b>智能动作与交互</b>：<code>/aima/motion/intelligent_task_state</code>、
+             <code>/aima/interaction/task_status</code> 均无人发布。</p>
+        </dd>
+        <dt>要什么</dt>
+        <dd><p class="ask">逐条说明是「需要某个开关才启动」「需要额外授权/固件」还是「本机型不支持」。
+            只要一句话，我们就能决定界面上是留位还是收掉。</p></dd>
+      </dl>
+    </div>
+  </section>
+
+  <section>
+    <div class="head">
+      <span class="pri">附录 A</span>
+      <h2>怎么复现</h2>
+      <p>下面每条都是在这台机器上跑过的。所有命令都需要机器人自己的 DDS profile。</p>
+    </div>
+    <pre><span class="c"># 机器人上每个 ROS 进程都带这个 profile（见 /robot/software/*/bin/em_run.sh）。
+# 不带的话会出现「服务名看得见、却永远匹配不上」的假象。</span>
+export FASTRTPS_DEFAULT_PROFILES_FILE=/robot/software/entry/cfg/standard/ros_dds_configuration.xml
+source /opt/ros/humble/setup.bash
+
+<span class="c"># ① 服务：广告 ≠ 能调。暖机到图谱稳定再逐个判。</span>
+python3 - &lt;&lt;'PY'
+import rclpy, time
+from rclpy.node import Node
+from rosidl_runtime_py.utilities import get_service
+rclpy.init(); n = Node("probe")
+cli = {}
+for s, ty in n.get_service_names_and_types():
+    if ty and not s.startswith(("/probe", "/q1_")):
+        try: cli[s] = n.create_client(get_service(ty[0]), s)
+        except Exception: pass
+last, stable, t0 = -1, 0, time.time()
+while time.time() - t0 &lt; 40:
+    rclpy.spin_once(n, timeout_sec=0.5)
+    ok = sum(1 for c in cli.values() if c.service_is_ready())
+    stable = stable + 1 if ok == last else 0
+    if stable &gt;= 6 and ok: break
+    last = ok
+print("可调", sum(1 for c in cli.values() if c.service_is_ready()), "/", len(cli))
+print("无 server:", sorted(s for s, c in cli.items() if not c.service_is_ready()))
+PY
+
+<span class="c"># ② 话题：同样要暖机，否则活的话题会被数成 0 个发布者。</span>
+python3 - &lt;&lt;'PY'
+import rclpy, time
+from rclpy.node import Node
+rclpy.init(); n = Node("probe")
+last, stable, t0 = -1, 0, time.time()
+while time.time() - t0 &lt; 60:
+    rclpy.spin_once(n, timeout_sec=0.5)
+    live = sum(1 for t, _ in n.get_topic_names_and_types() if n.count_publishers(t))
+    stable = stable + 1 if live == last else 0
+    if stable &gt;= 8: break
+    last = live
+print("无发布者:", [t for t, _ in n.get_topic_names_and_types() if not n.count_publishers(t)])
+PY</pre>
+    <p class="note">
+      <b>三个坑，我们踩过，写在这里省贵方时间。</b>
+      一是判定只能靠 <code>service_is_ready()</code>，<code>ros2 service list</code> 里出现名字不代表有人在 serve；
+      二是<b>任何计数都要先暖机</b> —— 建完节点立刻数，DDS 还没发现完，
+      这台机器上会把活得好好的话题数成 0。
+      三是 QoS：<code>/aima/hal/audio/capture</code> 这类口用订阅端默认的 RELIABLE
+      会<b>一条都收不到且不报错</b>，必须 BEST_EFFORT；而个别话题（如
+      <code>/aima/hal/touch/state</code>）即便逐 QoS 试也只在事件发生时出数 ——
+      订阅端 QoS 请以逐话题实测为准，不要按 DDS 理论表猜。
+    </p>
+  </section>
+
+  <section>
+    <div class="head">
+      <span class="pri">附录 B</span>
+      <h2>声明了但无人发布的话题</h2>
+      <p>共 22 条。话题名里的 <code>5F</code> 是 ROS 2 对下划线（0x5F）的转义，原样是 <code>aimdk_msgs</code>。</p>
+    </div>
+    <div class="scroll">
+      <table>
+        <caption>下列话题在图上存在、消息类型已定义，但发布者数量实测为 0。</caption>
+        <thead><tr><th>话题</th><th>消息类型</th><th>归属</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">/aima/algo/charge_point/recognition_state</td><td class="nm">ChargePointRecognitionState</td><td>自动充电</td></tr>
+          <tr><td class="nm">/aima/algo/charge_point/sit_state</td><td class="nm">ChargePointSitState</td><td>自动充电</td></tr>
+          <tr><td class="nm">/aima/algo/follow/state</td><td class="nm">FollowState</td><td>跟随</td></tr>
+          <tr><td class="nm">/aima/algo/navi/state</td><td class="nm">NaviState</td><td>导航</td></tr>
+          <tr><td class="nm">/aima/battery_state/pb_3Aaimdk_2Eprotocol_2EBmsState</td><td class="nm">RosMsgWrapper</td><td>电池</td></tr>
+          <tr><td class="nm">/aima/coreon_fusion/state</td><td class="nm">CoreonFusionState</td><td>感知融合</td></tr>
+          <tr><td class="nm">/aima/hal/joint/state</td><td class="nm">JointStateArray</td><td><b>全身关节</b></td></tr>
+          <tr><td class="nm">/aima/hal/neck_light/state</td><td class="nm">NeckLightState</td><td>颈部灯</td></tr>
+          <tr><td class="nm">/aima/hal/servo/state</td><td class="nm">ServoStatus</td><td>舵机</td></tr>
+          <tr><td class="nm">/aima/hds/process/info/soc0</td><td class="nm">ProcessInfo</td><td>进程信息</td></tr>
+          <tr><td class="nm">/aima/hds/process/info/soc1</td><td class="nm">ProcessInfo</td><td>进程信息</td></tr>
+          <tr><td class="nm">/aima/hds/process/info/soc2</td><td class="nm">ProcessInfo</td><td>进程信息</td></tr>
+          <tr><td class="nm">/aima/interaction/task_status</td><td class="nm">AmStatus</td><td>交互任务</td></tr>
+          <tr><td class="nm">/aima/map/build_state</td><td class="nm">MapBuildState</td><td>建图</td></tr>
+          <tr><td class="nm">/aima/map/state</td><td class="nm">MapState</td><td>地图</td></tr>
+          <tr><td class="nm">/aima/mc/custom/joint/command</td><td class="nm">McCustomJointCommand</td><td>自定义关节</td></tr>
+          <tr><td class="nm">/aima/motion/intelligent_task_state</td><td class="nm">IntelligentMotionTaskState</td><td>智能动作</td></tr>
+          <tr><td class="nm">/aima/robot/config_control</td><td class="nm">RobotConfigControl</td><td>配置</td></tr>
+          <tr><td class="nm">/fall_guard/danger_regions</td><td class="nm">PoseArray</td><td><b>跌倒预警</b></td></tr>
+          <tr><td class="nm">/perception/follow_candidates</td><td class="nm">PerceptionFollow</td><td>跟随</td></tr>
+          <tr><td class="nm">/slam_state</td><td class="nm">SlamState</td><td>SLAM</td></tr>
+          <tr><td class="nm">/x2robot/net/isfiveg</td><td class="nm">IsFiveG</td><td>网络</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="head">
+      <span class="pri">附录 C</span>
+      <h2>广告了但无人 serve 的服务</h2>
+      <p>共 7 条（在 257 条广告服务中）。其余 212 条实测可调。</p>
+    </div>
+    <div class="scroll">
+      <table>
+        <caption>这些名字出现在服务图上，但没有任何节点在 serve，调用必然失败。</caption>
+        <thead><tr><th>服务</th><th>用途</th><th>状态</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">/aimdk_5Fmsgs/srv/CtrlModem</td><td>模组控制</td><td><span class="chip no">无 server</span></td></tr>
+          <tr><td class="nm">/aimdk_5Fmsgs/srv/GetMapList</td><td>列出地图</td><td><span class="chip no">无 server</span></td></tr>
+          <tr><td class="nm">/aimdk_5Fmsgs/srv/GetModemInfo</td><td>模组信息</td><td><span class="chip no">无 server</span></td></tr>
+          <tr><td class="nm">/aimdk_5Fmsgs/srv/PlayEmotionByStr</td><td>按名字播表情</td><td><span class="chip no">无 server</span></td></tr>
+          <tr><td class="nm">/aimdk_5Fmsgs/srv/PlayLight</td><td>灯光</td><td><span class="chip no">无 server</span></td></tr>
+          <tr><td class="nm">/aimdk_5Fmsgs/srv/SetNeckLight</td><td>颈部灯</td><td><span class="chip no">无 server</span></td></tr>
+          <tr><td class="nm">/aimdk_5Fmsgs/srv/SetPowerDownOrin</td><td>下电</td><td><span class="chip no">无 server</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="head">
+      <span class="pri">附</span>
+      <h2>已经通了的部分</h2>
+      <p>为免误会，这些不需要动 —— 控制台正在用。</p>
+    </div>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>能力</th><th>接口</th><th></th></tr></thead>
+        <tbody>
+          <tr><td>语音播报</td><td class="nm">PlayTts · PlayAudioFile · SetVolume · SetMute</td><td><span class="chip ok">在跑</span></td></tr>
+          <tr><td>麦克风采集</td><td class="nm">/aima/hal/audio/capture（48 kHz / 8ch）</td><td><span class="chip ok">在跑</span></td></tr>
+          <tr><td>扬声器播放</td><td class="nm">/aima/hal/audio/playback（命令口）</td><td><span class="chip ok">在跑</span></td></tr>
+          <tr><td>动作库</td><td class="nm">GetMotionList · GetCustomMotionList · SetMcPresetMotion</td><td><span class="chip ok">在跑</span></td></tr>
+          <tr><td>速度控制</td><td class="nm">SetMcInputSource · /aima/mc/locomotion/velocity</td><td><span class="chip ok">在跑</span></td></tr>
+          <tr><td>表情与灯带</td><td class="nm">PlayDefaultEmoji · SetFaceMode · LedStripCommand</td><td><span class="chip ok">在跑</span></td></tr>
+          <tr><td>底盘位姿</td><td class="nm">/aima/mc/body_pose · /odom · /odom_torso</td><td><span class="chip ok">在跑</span></td></tr>
+          <tr><td>姿态（IMU）</td><td class="nm">/torso_imu_orientation（实测约 6.5 条/秒）</td><td><span class="chip ok">在跑</span></td></tr>
+          <tr><td>双向对讲</td><td class="nm">capture 下行 · playback 命令口上行（24 kHz 单声道）</td><td><span class="chip ok">在跑</span></td></tr>
+          <tr><td>抓拍</td><td class="nm">CaptureJpegImage · HALCameraCommand</td><td><span class="chip ok">在跑</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    <div>实测于 Q100024C700398 · 固件 test-qy2502_1_v2d0-soc0-v0.3.0.0.5-R-202608301125 · 2026-09-14</div>
+    <div>判定脚本、原始输出与逐条复现命令可一并提供。</div>
+  </footer>
+
+</div>

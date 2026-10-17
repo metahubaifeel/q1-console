@@ -1,0 +1,1475 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
+  <title>Q1 总控台</title>
+  <!-- 字体（Space Grotesk / IBM Plex）与 botversex 同族，但不写在这里：
+       head 里的 <link rel=stylesheet> 无论 media 写什么都会拖住 load 事件
+       （实测本机没有境外出口，TCP 超时把 load 从 14ms 拖到 10032ms）。
+       改由下面的脚本在 load 之后插进来，插进来的样式表不再参与本文档的
+       加载计时；字体到了再换，没到就用 app.css 字体栈里的系统字体。 -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+  <link rel="stylesheet" href="/static/app.css?v=20" />
+</head>
+<body>
+  <a class="skip" href="#直播">跳到画面</a>
+
+  <!-- 图标集 -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+    <symbol id="i-cam" viewBox="0 0 24 24"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+    <symbol id="i-mic" viewBox="0 0 24 24"><path d="M12 19v3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><rect x="9" y="2" width="6" height="13" rx="3"/></symbol>
+    <symbol id="i-map" viewBox="0 0 24 24"><path d="M14.1 5.55a2 2 0 0 0 1.8 0l3.65-1.83A1 1 0 0 1 21 4.62v12.76a1 1 0 0 1-.55.9l-4.55 2.27a2 2 0 0 1-1.8 0l-4.2-2.1a2 2 0 0 0-1.8 0l-3.65 1.83A1 1 0 0 1 3 19.38V6.62a1 1 0 0 1 .55-.9l4.55-2.27a2 2 0 0 1 1.8 0z"/><path d="M15 5.76v15"/><path d="M9 3.24v15"/></symbol>
+    <symbol id="i-smile" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><path d="M9 9h.01"/><path d="M15 9h.01"/></symbol>
+    <symbol id="i-motion" viewBox="0 0 24 24"><path d="M22 12h-2.5a2 2 0 0 0-1.9 1.5l-2.4 8.4a.25.25 0 0 1-.5 0L9.2 2.2a.25.25 0 0 0-.5 0l-2.3 8.3A2 2 0 0 1 4.5 12H2"/></symbol>
+    <symbol id="i-gauge" viewBox="0 0 24 24"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></symbol>
+    <symbol id="i-radar" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-wrench" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="m21.7 18-8-14a2 2 0 0 0-3.5 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+    <symbol id="i-snap" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="13" r="3"/></symbol>
+    <symbol id="i-expand" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.7 9.7 0 0 1 6.7 2.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.7 9.7 0 0 1-6.7-2.7L3 16"/><path d="M8 16H3v5"/></symbol>
+    <symbol id="i-zap" viewBox="0 0 24 24"><path d="M4 14a1 1 0 0 1-.8-1.6l9.9-10.2a.5.5 0 0 1 .9.4l-2 6a1 1 0 0 0 1 1.4h7a1 1 0 0 1 .8 1.6l-9.9 10.2a.5.5 0 0 1-.9-.4l2-6a1 1 0 0 0-1-1.4z"/></symbol>
+    <symbol id="i-battery" viewBox="0 0 24 24"><rect width="16" height="10" x="2" y="7" rx="2"/><path d="M22 11v2"/></symbol>
+    <symbol id="i-speaker" viewBox="0 0 24 24"><path d="M11 4.7a.7.7 0 0 0-1.2-.5L6.4 7.6A1.4 1.4 0 0 1 5.4 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.4a1.4 1.4 0 0 1 1 .4l3.4 3.4a.7.7 0 0 0 1.2-.5z"/><path d="M16 9a5 5 0 0 1 0 6"/><path d="M19.4 5.6a9 9 0 0 1 0 12.8"/></symbol>
+    <symbol id="i-cross" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M22 12h-4"/><path d="M6 12H2"/><path d="M12 6V2"/><path d="M12 22v-4"/></symbol>
+    <symbol id="i-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16.2 7.8-2.1 6.4-6.4 2.1 2.1-6.4z"/></symbol>
+    <symbol id="i-route" viewBox="0 0 24 24"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></symbol>
+    <symbol id="i-wifi" viewBox="0 0 24 24"><path d="M12 20h.01"/><path d="M8.5 16.4a5 5 0 0 1 7 0"/><path d="M5 12.9a10 10 0 0 1 5.2-2.7"/><path d="M19 12.9a10 10 0 0 0-2-1.5"/><path d="M2 8.8a15 15 0 0 1 4.2-2.6"/><path d="M22 8.8a15 15 0 0 0-11.3-3.8"/></symbol>
+    <symbol id="i-cpu" viewBox="0 0 24 24"><rect width="16" height="16" x="4" y="4" rx="2"/><rect width="6" height="6" x="9" y="9" rx="1"/><path d="M15 2v2"/><path d="M15 20v2"/><path d="M2 15h2"/><path d="M2 9h2"/><path d="M20 15h2"/><path d="M20 9h2"/><path d="M9 2v2"/><path d="M9 20v2"/></symbol>
+    <symbol id="i-hand" viewBox="0 0 24 24"><path d="M18 11V6a2 2 0 0 0-4 0"/><path d="M14 10V4a2 2 0 0 0-4 0v2"/><path d="M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.9-6-2.3l-3.6-3.6a2 2 0 0 1 2.8-2.8L7 15"/></symbol>
+    <symbol id="i-chat" viewBox="0 0 24 24"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+  </defs></svg>
+
+  <header class="top" id="topBar">
+    <div class="top-in">
+      <div class="brand"><b>Q1</b><span>总控台</span></div>
+      <div id="net" class="status-pill" role="status"><i class="led"></i><span id="netLab">连接中</span></div>
+      <span class="chip" id="headBits">—</span>
+      <span class="chip" id="freshLab"><svg class="ic"><use href="#i-wifi"/></svg><span>—</span></span>
+      <span class="chip" id="linkLab" hidden>—</span>
+      <span class="spacer"></span>
+      <nav class="chapters" aria-label="分区">
+        <a href="#直播">画面</a>
+        <a href="#实时">运动</a>
+        <a href="#指标">仪表</a>
+        <a href="#数据">诊断</a>
+      </nav>
+      <button class="switch on" id="btnAuto" type="button" onclick="toggleAuto()" aria-pressed="true" title="关掉就只靠推送，不再轮询">
+        <i></i><span id="autoLab">自动刷新</span>
+      </button>
+      <button class="btn" type="button" onclick="refresh()" title="重连画面和推送"><svg class="ic"><use href="#i-refresh"/></svg>刷新</button>
+      <span class="vsep"></span>
+      <button class="estop" id="btnEstop" type="button" onclick="estop(event)" title="停速度 · 松开遥控 · 趴下（Esc）">
+        <svg class="ic"><use href="#i-zap"/></svg>急停
+      </button>
+    </div>
+    <div id="receipt" class="receipt" data-kind="idle" role="status" aria-live="polite">
+      <b id="receiptStep">待命</b><span id="receiptText"></span>
+    </div>
+    <div id="alertBar" class="alertbar" role="status" aria-live="polite" hidden></div>
+  </header>
+
+  <main>
+    <!-- 这一层 .dash 是网格本体（app.css 里定三列）。重排面板那天脚本把它吃掉了，
+         于是三个 .col 退化成一摞全宽 div：头摄按 16:9 铺满整个 1600px 宽就是 900px 高，
+         运动控制被顶到屏幕外 —— 顺序看着没错，版式全塌了。
+         顺序验证脚本量不到它（它只看 .dash .col，容器没了就一行都不打），
+         是「首屏同现」那条硬要求把它兜住的。 -->
+    <div class="dash">
+      <div class="col c1">
+        <section class="panel p-cam" id="直播" aria-labelledby="camTitle">
+          <header>
+            <span class="ico"><svg class="ic"><use href="#i-cam"/></svg></span>
+            <h2 id="camTitle">头摄</h2>
+            <span class="tag" id="camCap">连接中</span>
+            <span class="hact">
+              <button type="button" onclick="snap(event)" title="抓拍当前帧，存成 jpg" aria-label="抓拍"><svg class="ic"><use href="#i-snap"/></svg></button>
+              <button type="button" onclick="toggleFs()" title="全屏看画面（全屏时 Esc 退出，不会急停）" aria-label="全屏"><svg class="ic"><use href="#i-expand"/></svg></button>
+            </span>
+          </header>
+          <div id="camHost">
+            <div class="cam flush ticks" id="camBox">
+              <canvas id="cam" class="feed" width="1280" height="720" role="img" aria-label="Q1 头摄实时画面"></canvas>
+              <canvas id="faces"></canvas>
+              <span class="nosig">无信号</span>
+            </div>
+          </div>
+        </section>
+        <section class="panel p-twin" id="twinPanel" aria-labelledby="twinTitle">
+          <header>
+            <span class="ico"><svg class="ic"><use href="#i-radar"/></svg></span>
+            <h2 id="twinTitle">本体感知</h2>
+            <span class="tag" id="twinCap">装 URDF…</span>
+          </header>
+          <div class="body">
+            <div class="cam twin ticks" id="twinBox">
+              <canvas id="twin" width="960" height="540" aria-label="URDF 数字孪生"></canvas>
+              <span class="nosig">URDF</span>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div class="col c2">
+        <section class="panel p-motion" id="实时" aria-labelledby="padTitle">
+          <header>
+            <span class="ico"><svg class="ic"><use href="#i-motion"/></svg></span>
+            <h2 id="padTitle">运动控制</h2>
+            <span class="tag" id="gaitHint">—</span>
+          </header>
+          <div class="body" id="pad">
+            <label class="arm" id="armBox" title="起身和走路的前置开关；不勾时运控按钮全部锁住">
+              <span><input id="watchOk" type="checkbox" /> 安全确认 · 我已就位</span>
+              <b id="armLab">未确认</b>
+            </label>
+            <ol class="chain" id="chain">
+              <li data-step="arm">安全</li>
+              <li data-step="stand">站立</li>
+              <li data-step="gait">走跑</li>
+              <li data-step="pad">遥控</li>
+            </ol>
+            <div class="sub">姿态</div>
+            <div class="row">
+              <button class="btn move" type="button" data-need-watch data-mc="1" disabled onclick="mcAction(1007,'站立',event)">站立</button>
+              <button class="btn move" type="button" data-need-watch data-mc="1" disabled onclick="mcAction(1002,'走跑',event)">走跑</button>
+              <button class="btn" type="button" data-need-watch data-mc="1" disabled onclick="mcAction(1008,'趴下',event)">趴下</button>
+              <button class="btn" type="button" data-need-watch data-mc="1" disabled onclick="mcAction(1,'松开运控',event)">松开</button>
+            </div>
+            <div class="sub">遥控</div>
+            <button class="switch wide" id="btnPad" type="button" onclick="togglePad()" aria-pressed="false">
+              <i></i><span id="padLab">遥控</span>
+            </button>
+            <div class="dpad" id="dpad" hidden>
+              <button type="button" data-k="q">Q</button>
+              <button type="button" data-k="w">W</button>
+              <button type="button" data-k="e">E</button>
+              <button type="button" data-k="a">A</button>
+              <button type="button" data-k="s">S</button>
+              <button type="button" data-k="d">D</button>
+            </div>
+            <p class="kv mono" id="padHint">WASD 前后左右 · QE 转身 · 空格停</p>
+            <details class="fold">
+              <summary title="旧号不接速度，WASD 走的是「走跑」">旧指令号（四足 / 两足）</summary>
+              <div class="fold-body">
+                <div class="row">
+                  <button class="btn move" type="button" data-need-watch data-mc="1" disabled onclick="mcAction(101,'四足站',event)">四足站</button>
+                  <button class="btn move" type="button" data-need-watch data-mc="1" disabled onclick="mcAction(201,'两足站',event)">两足站</button>
+                  <button class="btn" type="button" data-need-watch data-mc="1" disabled onclick="mcAction(102,'四足走',event)">四足走</button>
+                  <button class="btn" type="button" data-need-watch data-mc="1" disabled onclick="mcAction(202,'两足走',event)">两足走</button>
+                </div>
+              </div>
+            </details>
+            <details class="fold">
+              <summary>预设动作</summary>
+              <div class="fold-body"><div class="chips" id="mots"></div></div>
+            </details>
+          </div>
+        </section>
+        <section class="voice panel p-voice" id="voice" aria-labelledby="voiceTitle">
+          <header>
+            <span class="ico"><svg class="ic"><use href="#i-speaker"/></svg></span>
+            <h2 id="voiceTitle">语音</h2>
+            <span class="tag" id="voiceStatus">—</span>
+          </header>
+          <div class="body">
+            <textarea id="say" aria-label="要说的话">你好，我是 Q1。</textarea>
+            <div class="row">
+              <button class="btn acc" id="btnSay" type="button" onclick="speak(event)">说</button>
+              <button class="btn" id="btnHush" type="button" onclick="stopTalk(event)" title="打断当前这句">打断</button>
+              <button class="switch" id="btnMute" type="button" onclick="toggleMute(event)" aria-pressed="false">
+                <i></i><span id="muteLab">静音</span>
+              </button>
+            </div>
+            <div class="row">
+              <label class="kv" for="vol">音量</label>
+              <strong class="voln num" id="volLab">—/20</strong>
+              <input id="vol" type="range" min="0" max="20" step="1" value="20" aria-label="音量 0 到 20" />
+            </div>
+            <p class="kv" id="voiceHint"></p>
+
+            <div class="talk" id="talk">
+              <div class="row">
+                <button class="btn talkbtn" id="btnTalk" type="button"
+                        title="按住说话：你的声音从这边送到机器人喇叭。松手结束。键盘按住空格或回车也行。">按住说话</button>
+                <span class="tag" id="talkTag">—</span>
+              </div>
+              <div class="row">
+                <button class="switch" id="btnListen" type="button" aria-pressed="false"
+                        title="收听机器人麦克风：能听见它那边的人在说什么。说话时自动静掉，免得听见自己。">
+                  <i></i><span id="listenLab">收听</span>
+                </button>
+                <button class="switch" id="btnMic" type="button" aria-pressed="false"
+                        title="试话筒：只开你这边的话筒、不往外发。对着说话看「我」那格跳不跳 —— 跳就是好的，不跳就看下面那行字写的原因。25 秒后自己关。">
+                  <i></i><span id="micLab">试话筒</span>
+                </button>
+              </div>
+              <!-- 双向电平：一眼看出谁在说话，不用先出声试 -->
+              <div class="vu" id="vu" role="img" aria-label="对讲双向电平">
+                <b id="vuMe">我</b>
+                <div class="bar seg"><i id="vuMeBar"></i></div>
+                <b id="vuThem">对面</b>
+                <div class="bar seg"><i id="vuThemBar"></i></div>
+              </div>
+              <!-- 话筒名字 / 打不开的具体原因。没有内容时整行收起来，不占地方 -->
+              <p class="kv" id="micInfo" hidden></p>
+            </div>
+          </div>
+        </section>
+        <section class="panel p-metrics" id="指标" aria-labelledby="metricsTitle">
+          <header>
+            <span class="ico"><svg class="ic"><use href="#i-gauge"/></svg></span>
+            <h2 id="metricsTitle">仪表</h2>
+            <span class="tag" id="poseSub">—</span>
+          </header>
+          <div class="body">
+            <div class="inst">
+              <div class="tile hero">
+                <span><svg class="ic"><use href="#i-battery"/></svg>电池</span>
+                <div class="big" id="batBig">—</div>
+                <div class="bar seg"><i id="batBar"></i></div>
+                <em id="batSub">—</em>
+              </div>
+              <div class="tile">
+                <span><svg class="ic"><use href="#i-cross"/></svg>姿态</span>
+                <canvas class="gauge" id="att" aria-label="俯仰滚转姿态仪"></canvas>
+              </div>
+              <div class="tile">
+                <span><svg class="ic"><use href="#i-motion"/></svg>速度</span>
+                <canvas class="gauge" id="svec" aria-label="速度矢量"></canvas>
+                <em class="num" id="cardVel">—</em>
+              </div>
+              <div class="tile">
+                <span><svg class="ic"><use href="#i-mic"/></svg>麦克风</span>
+                <div class="bar seg"><i id="micBar"></i></div>
+                <em id="micSub">—</em>
+              </div>
+              <div class="tile">
+                <span><svg class="ic"><use href="#i-speaker"/></svg>扬声器</span>
+                <div class="bar seg"><i id="spkBar"></i></div>
+                <em id="spkSub">—</em>
+              </div>
+              <div class="kvlist">
+                <div><h3>身体</h3><div class="kv num" id="cardBody">—</div></div>
+              </div>
+              <div class="kvlist">
+                <div><h3>里程</h3><div class="kv num" id="cardOdom">—</div></div>
+              </div>
+            </div>
+            <details class="fold" id="jointsCard" style="display:none">
+              <summary>上身关节</summary>
+              <div class="fold-body" id="joints"></div>
+            </details>
+          </div>
+        </section>
+      </div>
+
+      <div class="col c3">
+        <section class="panel p-nav" id="homeNav" aria-labelledby="navTitle">
+          <header>
+            <span class="ico"><svg class="ic"><use href="#i-map"/></svg></span>
+            <h2 id="navTitle">地图 · 导航</h2>
+            <span class="tag" id="followSub">—</span>
+          </header>
+          <div class="body">
+            <!-- 房间图 / 雷达 / 朝向 / 轨迹：和下面的「建图·记点·回充」按钮是同一件事的
+                 两面。以前这四块在「本体感知」里、按钮在这里，中间隔着两列，
+                 眼睛对不上手 —— 用户说「不知道怎么玩」有一半是这么来的。 -->
+            <div class="viz2">
+              <div class="viz tall">
+                <h3>房间图</h3>
+                <canvas id="roomMap" width="640" height="220" aria-label="房间占据图，可点选导航点"></canvas>
+                <div class="vcap" id="roomCap">—</div>
+              </div>
+              <div class="viz tall">
+                <h3>雷达</h3>
+                <canvas id="radar" width="320" height="220" aria-label="避障雷达"></canvas>
+                <div class="vcap" id="radarCap">—</div>
+              </div>
+            </div>
+            <div class="duo">
+              <div class="viz">
+                <h3>朝向</h3>
+                <canvas id="heading" width="240" height="220" aria-label="机身朝向"></canvas>
+                <div class="vcap" id="headCap">—</div>
+              </div>
+              <div class="viz">
+                <h3>轨迹</h3>
+                <svg class="traj" id="traj" viewBox="0 0 300 120" preserveAspectRatio="none" aria-label="走过的轨迹"></svg>
+              </div>
+            </div>
+            <!-- 只在「机器人压根没跑导航」时出现的一句话。有图有数据就收起来 ——
+                 常驻的说明文字就是废话，用户最烦这个。 -->
+            <p class="kv" id="navState" hidden></p>
+
+            <div class="sub">跟随</div>
+            <div class="row">
+              <button class="btn" type="button" data-need-watch disabled onclick="followPerc(true, event)">感知开</button>
+              <button class="btn" type="button" onclick="followPerc(false, event)">感知关</button>
+              <button class="btn move" type="button" data-need-watch disabled onclick="followGo(true, 0, event)">跟人走</button>
+              <button class="btn" type="button" onclick="followGo(false, 0, event)">停跟随</button>
+            </div>
+            <div class="chips" id="followCands"></div>
+
+            <div class="sub">地图</div>
+            <div class="row">
+              <input id="mapName" type="text" value="家里" maxlength="40" aria-label="地图名字" style="width:104px" />
+              <button class="btn move" type="button" data-need-watch disabled onclick="mapDo('start', event)">建图</button>
+              <button class="btn move" type="button" data-need-watch disabled onclick="mapDo('startauto', event)">自动建图</button>
+              <button class="btn" type="button" data-need-watch disabled onclick="mapDo('save', event)">存图</button>
+              <button class="btn" type="button" onclick="mapDo('cancel', event)">取消</button>
+            </div>
+            <p class="kv mono" id="mapSub">—</p>
+            <div class="chips" id="mapList"></div>
+            <div class="chips" id="pointList"></div>
+            <img id="mapImg" class="mapshot" alt="" hidden />
+
+            <div class="sub">导航</div>
+            <div class="row">
+              <button class="btn" type="button" onclick="naviDo('stop', event)">停</button>
+              <button class="btn" type="button" onclick="naviDo('cancel', event)">取消</button>
+              <button class="btn move" type="button" data-need-watch disabled onclick="naviDo('charge', event)">回充</button>
+              <button class="btn" type="button" data-need-watch disabled onclick="markHere(event)">记点</button>
+            </div>
+            <p class="kv mono" id="naviSub">—</p>
+          </div>
+        </section>
+        <section class="panel p-face" aria-labelledby="facePanelTitle">
+          <header>
+            <span class="ico"><svg class="ic"><use href="#i-smile"/></svg></span>
+            <h2 id="facePanelTitle">表情 · 灯光</h2>
+          </header>
+          <div class="body">
+            <div class="sub">表情</div>
+            <div class="chips" id="emos"></div>
+            <div class="sub">灯光</div>
+            <div class="chips" id="lights"></div>
+            <div class="row">
+              <input id="ledc" type="color" value="#0a28c8" aria-label="灯的颜色" />
+              <button class="btn" type="button" onclick="applyColor(event)">应用颜色</button>
+            </div>
+          </div>
+        </section>
+        <section class="panel p-faces" id="facesBook" aria-labelledby="facesTitle">
+          <header>
+            <span class="ico"><svg class="ic"><use href="#i-users"/></svg></span>
+            <h2 id="facesTitle">人脸本</h2>
+            <span class="tag" id="faceCount">0</span>
+          </header>
+          <div class="body">
+            <div class="chips" id="nowFaces"></div>
+            <div class="plist" id="peopleList"></div>
+          </div>
+        </section>
+        <section class="panel p-diag" id="数据" aria-labelledby="diagTitle">
+          <header>
+            <span class="ico"><svg class="ic"><use href="#i-wrench"/></svg></span>
+            <h2 id="diagTitle">诊断</h2>
+            <span class="tag" id="diagTag">—</span>
+          </header>
+          <div class="body">
+            <section class="grid" id="cards" aria-label="直报">
+              <article class="card"><h3><svg class="ic"><use href="#i-wifi"/></svg>连接</h3><div class="kv" id="cardConn">—</div></article>
+              <article class="card"><h3><svg class="ic"><use href="#i-hand"/></svg>摸头 / 防摔 / 舵机</h3><div class="kv" id="cardTouch">—</div></article>
+              <article class="card"><h3><svg class="ic"><use href="#i-speaker"/></svg>正在说 / 字幕</h3><div class="kv" id="cardTts">—</div></article>
+              <article class="card"><h3><svg class="ic"><use href="#i-chat"/></svg>对话 / 意图</h3><div class="kv" id="cardConv">—</div></article>
+              <article class="card"><h3><svg class="ic"><use href="#i-list"/></svg>任务</h3><div class="kv" id="cardTask">—</div></article>
+              <article class="card"><h3><svg class="ic"><use href="#i-cpu"/></svg>系统</h3><div class="kv" id="cardSys">—</div></article>
+              <article class="card"><h3><svg class="ic"><use href="#i-cam"/></svg>相机模块</h3><div class="kv" id="cardCamMod">—</div></article>
+              <article class="card"><h3><svg class="ic"><use href="#i-alert"/></svg>告警</h3><div class="kv" id="cardAlerts">—</div></article>
+              <article class="card"><h3><svg class="ic"><use href="#i-wrench"/></svg>机上诊断</h3><div class="kv" id="cardDiags">—</div></article>
+              <article class="card"><h3><svg class="ic"><use href="#i-compass"/></svg>厂里导航 / Insta360</h3><div class="kv" id="cardBlocked">—</div></article>
+            </section>
+            <details class="fold"><summary>采样</summary><div class="fold-body" id="panels"></div></details>
+            <details class="fold"><summary>指令回执</summary><div class="fold-body"><pre id="log">—</pre></div></details>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <div id="fsOverlay" class="fs" hidden>
+    <button class="close" type="button" onclick="toggleFs(false)" aria-label="退出全屏"><svg class="ic lg"><use href="#i-x"/></svg></button>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+  <!-- 这三个必须在下面那段内联脚本之前：内联脚本末尾要调 Q1Gauge.boot() / Q1Talk.boot() -->
+  <script src="/static/room.js?v=20"></script>
+  <script src="/static/gauge.js?v=20"></script>
+  <script src="/static/talk.js?v=20"></script>
+
+  <script>
+    const MAXV = 0.6, MAXYAW = 1.0
+    const emos = [[3001,'平静'],[3002,'耍酷'],[3003,'开心'],[3004,'好奇'],[3005,'困惑'],[3006,'调皮'],[3007,'崇拜'],[3008,'撒娇'],[3009,'困倦'],[3010,'眨眼'],[3011,'闭眼'],[3012,'环顾'],[3013,'好奇2']]
+    const lights = [[0,'关'],[2,'彩虹'],[1,'绿流水'],[20,'白呼吸'],[17,'白常亮']]
+    /* 预设动作的兜底表。真表由机器人自己报 —— 守护进程每两分钟问一次 GetMotionList，
+       实测这台机器内置 16 个动作，这里写死的 6 个只是其中三分之一。
+       写死这 6 个的理由是「万一问不到」，不是「就该有 6 个」。
+       自录动作（GetCustomMotionList）也一并列出来，用户自己录过一条 24 秒的。 */
+    const MOTS_FALLBACK = [[3004,'挥手'],[3002,'握手'],[3003,'碰拳'],[3007,'比心'],[3018,'拥抱'],[3046,'跳舞 A']]
+    /* 内部动作名是 snake_case 英文，界面上要中文：
+       wave_hand → 挥手 …… 表里没有的就照原样显示，总比不显示强。 */
+    const MOT_NAME = {
+      wave_hand:'挥手', handshake:'握手', fist_bump:'碰拳', waving:'招手',
+      happy_emotion:'开心', heart_gesture:'比心', cheer_up:'加油', stretch:'伸懒腰',
+      hug:'拥抱', reject:'拒绝', official_show_a:'官方展示',
+      dance_a:'舞 A', dance_b:'舞 B', dance_c:'舞 C', boxing:'打拳', street_dance:'街舞',
+    }
+    let mots = MOTS_FALLBACK.slice()
+    let motsBuilt = ''
+    const ui = { mute: false, volume: 20, hushed: false, speaking: false, emotion: null, light: null, busy: false }
+    emos.forEach(([id, name]) => {
+      const b = document.createElement('button'); b.type = 'button'; b.textContent = name; b.dataset.id = id
+      b.onclick = () => emotion(id, name, b); document.getElementById('emos').appendChild(b)
+    })
+    lights.forEach(([id, name]) => {
+      const b = document.createElement('button'); b.type = 'button'; b.textContent = name; b.dataset.id = id
+      b.onclick = () => setLight(id, null, name, b); document.getElementById('lights').appendChild(b)
+    })
+    /* 动作按钮重建。机器人报来的表变了才重建 —— 每帧都重建的话，
+       手指还没抬起来按钮就被换掉了，点不中。 */
+    function buildMots(list) {
+      const key = JSON.stringify(list)
+      if (key === motsBuilt) return
+      motsBuilt = key
+      const host = document.getElementById('mots')
+      host.innerHTML = ''
+      list.forEach(x => {
+        const b = document.createElement('button'); b.type = 'button'
+        b.dataset.needWatch = '1'; b.disabled = true
+        if (x.custom) {
+          b.textContent = x.name + ' ' + x.secs + 's'
+          b.onclick = () => cmotion(x.rtype, x.name, b)
+        } else {
+          b.textContent = x.name
+          b.onclick = () => motion(x.id, x.name, b)
+        }
+        host.appendChild(b)
+      })
+    }
+    /* 机器人报来的动作库 → 按钮。没报来（没加载动作库 / 守护进程还没问完第一轮）
+       就保持写死那 6 个，什么都不做 —— 不要清空，界面上不能让按钮凭空消失。
+
+       自录动作也是按钮（走的另一条服务）：PlayCustomMotion 要 resource_type +
+       resource_key，GetCustomMotionList 里两个都有 —— 之前卡住只是因为
+       poll_motions 没把 resource_type 报上来，按钮和通路这次一起接通了。 */
+    function syncMots(m) {
+      if (!m) return
+      const b = m.builtin || [], c = m.custom || []
+      if (!b.length && !c.length) return
+      const rows = b.map(x => ({ id: x.id, name: MOT_NAME[x.name] || x.name }))
+      c.forEach(x => rows.push({ custom: true, rtype: x.type, name: x.name, secs: x.secs }))
+      buildMots(rows)
+      const sm = document.querySelector('#mots')?.closest('details')?.querySelector('summary')
+      if (sm) {
+        sm.textContent = `预设动作 ${b.length + c.length}`
+        sm.title = c.length
+          ? `内置 ${b.length} 个，自录 ${c.length} 个（${c.map(x => x.name + ' ' + x.secs + 's').join('、')}）`
+          : `机器人内置 ${b.length} 个动作。`
+      }
+    }
+    buildMots(mots)
+    let auto = true, timer = null, lastFaces = [], toastTimer = null
+    let peopleBook = []
+    const keptIds = new Set()
+    let padOn = false, padTimer = null, fsOpen = false
+    const keys = new Set()
+    let lastLiveAt = 0, netOnline = false, rttMs = null
+    let gait = { stand: false, walk: false }
+    let mcReady = true
+    const volEl = document.getElementById('vol')
+    volEl.addEventListener('input', () => { document.getElementById('volLab').textContent = volEl.value + '/20' })
+    volEl.addEventListener('change', () => setVol(Number(volEl.value)))
+    document.getElementById('watchOk').addEventListener('change', syncWatch)
+    const roomEl = document.getElementById('roomMap')
+    if (roomEl) roomEl.addEventListener('click', ev => {
+      const p = window.Q1Room && window.Q1Room.hit(ev)
+      if (p && (p.name || p.id)) goPoint(p.name || p.id, ev)
+    })
+
+    async function api(path, opt) {
+      const r = await fetch(path, opt)
+      const t = await r.text()
+      let j; try { j = JSON.parse(t) } catch { j = { detail: t } }
+      if (!r.ok) throw new Error(typeof j.detail === 'string' ? j.detail : t)
+      return j
+    }
+    function cut(s, n) { s = String(s || '').replace(/\s+/g, ' ').trim(); return s.length > n ? s.slice(0, n) + '…' : s }
+    function receipt(kind, step, text) {
+      const box = document.getElementById('receipt')
+      box.dataset.kind = kind
+      document.getElementById('receiptStep').textContent = step
+      document.getElementById('receiptText').textContent = text || ''
+      toast(text ? (step + ' · ' + text) : step, kind === 'ok' ? 'ok' : kind === 'pending' ? 'pending' : 'bad')
+    }
+    function toast(msg, kind) {
+      const el = document.getElementById('toast')
+      el.textContent = msg
+      el.dataset.kind = kind || 'ok'
+      el.hidden = false
+      clearTimeout(toastTimer)
+      if (kind !== 'pending') toastTimer = setTimeout(() => { el.hidden = true }, 3200)
+    }
+    function log(x) {
+      document.getElementById('log').textContent = typeof x === 'string' ? x : JSON.stringify(x, null, 2)
+    }
+    function tagClass(el, kind) {
+      if (!el) return
+      el.classList.remove('ok', 'warn', 'bad')
+      if (kind) el.classList.add(kind)
+    }
+    function paintVoice() {
+      const box = document.getElementById('voice')
+      const st = document.getElementById('voiceStatus')
+      const hint = document.getElementById('voiceHint')
+      const muteBtn = document.getElementById('btnMute')
+      box.classList.toggle('muted', ui.mute)
+      box.classList.toggle('hushed', ui.hushed && !ui.mute)
+      muteBtn.classList.toggle('on', ui.mute)
+      muteBtn.setAttribute('aria-pressed', ui.mute ? 'true' : 'false')
+      document.getElementById('volLab').textContent = ui.volume + '/20'
+      if (document.activeElement !== volEl) volEl.value = String(ui.volume)
+      document.getElementById('btnSay').disabled = ui.mute || ui.busy
+      if (ui.mute && ui.speaking) { st.textContent = '静音 · 仍有声'; hint.textContent = '再点「打断」'; tagClass(st, 'bad') }
+      else if (ui.mute) { st.textContent = '静音'; hint.textContent = ''; tagClass(st, 'bad') }
+      else if (ui.speaking) { st.textContent = '正在说'; hint.textContent = ''; tagClass(st, 'ok') }
+      else if (ui.hushed) { st.textContent = '已打断'; hint.textContent = ''; tagClass(st, 'warn') }
+      else { st.textContent = '可发声'; hint.textContent = ''; tagClass(st, '') }
+      document.querySelectorAll('#emos button').forEach(b => b.classList.toggle('on', Number(b.dataset.id) === ui.emotion))
+      document.querySelectorAll('#lights button').forEach(b => b.classList.toggle('on', Number(b.dataset.id) === ui.light))
+    }
+    function setNet(online, text) {
+      document.getElementById('net').className = 'status-pill ' + (online ? 'on' : 'off')
+      document.getElementById('netLab').textContent = text
+    }
+    function paintChain() {
+      const armed = document.getElementById('watchOk').checked
+      const set = (k, on) => {
+        const el = document.querySelector('#chain li[data-step=' + k + ']')
+        if (el) el.classList.toggle('on', !!on)
+      }
+      set('arm', armed); set('stand', gait.stand); set('gait', gait.walk); set('pad', padOn)
+      const box = document.getElementById('armBox')
+      box.classList.toggle('armed', armed)
+      document.getElementById('armLab').textContent = armed ? '已解除安全锁' : '未确认'
+    }
+    function syncWatch() {
+      const ok = document.getElementById('watchOk').checked
+      document.querySelectorAll('[data-need-watch]').forEach(b => {
+        b.disabled = !ok || (b.dataset.mc === '1' && !mcReady)
+      })
+      if (!ok && padOn) togglePad()
+      else paintChain()
+    }
+    function toggleAuto() {
+      auto = !auto
+      const btn = document.getElementById('btnAuto')
+      btn.classList.toggle('on', auto)
+      btn.setAttribute('aria-pressed', auto ? 'true' : 'false')
+      schedule()
+    }
+    function setHtml(id, html) { document.getElementById(id).innerHTML = html }
+    function esc(s) { return String(s ?? '—').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])) }
+    /* 画布上的颜色也跟着 app.css 走；值缓存，别在每帧里反复问 */
+    const _cv = {}
+    function cssv(n, fb) {
+      if (_cv[n] === undefined) _cv[n] = getComputedStyle(document.documentElement).getPropertyValue(n).trim() || fb
+      return _cv[n]
+    }
+    const MONO = n => `${n}px "IBM Plex Mono", ui-monospace, monospace`
+    function drawFaces(faces) {
+      const cv = document.getElementById('cam')
+      const c = document.getElementById('faces')
+      if (!camSize.w) return
+      c.width = cv.clientWidth; c.height = cv.clientHeight
+      const ctx = c.getContext('2d')
+      ctx.clearRect(0, 0, c.width, c.height)
+      const sx = c.width / camSize.w, sy = c.height / camSize.h
+      const ACC = cssv('--acc', '#e85d1c'), ONA = cssv('--on-acc', '#05070c')
+      faces.forEach(f => {
+        ctx.strokeStyle = ACC; ctx.lineWidth = 1.5
+        ctx.strokeRect(f.x * sx, f.y * sy, f.w * sx, f.h * sy)
+        const lab = f.label || f.book_name || f.name || f.nickname || '脸'
+        ctx.font = MONO(11)
+        const tw = ctx.measureText(lab).width
+        ctx.fillStyle = ACC
+        ctx.fillRect(f.x * sx, Math.max(0, f.y * sy - 14), tw + 8, 14)
+        ctx.fillStyle = ONA
+        ctx.fillText(lab, f.x * sx + 4, Math.max(10, f.y * sy - 3))
+      })
+    }
+    function drawTraj(pts) {
+      const svg = document.getElementById('traj')
+      if (!pts || !pts.length) { svg.innerHTML = ''; return }
+      const xs = pts.map(p => p.x), ys = pts.map(p => p.y)
+      const minx = Math.min(...xs), maxx = Math.max(...xs)
+      const miny = Math.min(...ys), maxy = Math.max(...ys)
+      const dx = Math.max(0.2, maxx - minx), dy = Math.max(0.2, maxy - miny)
+      const d = pts.map((p,i) => {
+        const x = 10 + ((p.x - minx) / dx) * 280
+        const y = 110 - ((p.y - miny) / dy) * 100
+        return (i ? 'L' : 'M') + x.toFixed(1) + ' ' + y.toFixed(1)
+      }).join(' ')
+      const last = pts[pts.length - 1]
+      const lx = 10 + ((last.x - minx) / dx) * 280
+      const ly = 110 - ((last.y - miny) / dy) * 100
+      const ACC = cssv('--acc', '#e85d1c')
+      svg.innerHTML =
+        `<path d="${d}" fill="none" stroke="${ACC}" stroke-width="1.6" vector-effect="non-scaling-stroke"/>` +
+        `<circle cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" r="3" fill="${ACC}"/>`
+    }
+
+    function showLive(live, meta) {
+      lastLiveAt = Date.now()
+      const batHead = live.battery && live.battery.percent != null ? `电 ${live.battery.percent}%` : '电 —'
+      const actHead = (live.action && live.action.name) || (live.mc && live.mc.action) || '—'
+      const muteHead = live.mute ? '静音' : ''
+      document.getElementById('headBits').textContent = [batHead, actHead, muteHead].filter(Boolean).join(' · ')
+
+      /* 告警条 */
+      const alerts = live.alerts || []
+      const ab = document.getElementById('alertBar')
+      if (alerts.length) {
+        ab.hidden = false
+        ab.innerHTML = alerts.slice(0, 6).map(a =>
+          `<span class="al${Number(a.level) === 1 ? ' w1' : ''}">` +
+          `<svg class="ic"><use href="#i-alert"/></svg>${esc(a.code)} ${esc(a.text)}</span>`
+        ).join('')
+      } else { ab.hidden = true; ab.innerHTML = '' }
+
+      /* 动作可切？ */
+      mcReady = !(live.action && live.action.switch_ready === false)
+      if (!mcReady) syncWatch()
+
+      const bat = live.battery
+      document.getElementById('batBig').innerHTML = bat ? bat.percent + '<small>%</small>' : '—'
+      document.getElementById('batSub').textContent = bat
+        ? `${bat.voltage_v}V ${bat.current_a}A ${bat.power_w}W ${bat.temp_c}°C ${bat.cycles}次`
+        : '无电池包'
+      const bar = document.getElementById('batBar')
+      const pct = bat ? Number(bat.percent) : 0
+      bar.style.width = bat ? (pct + '%') : '0'
+      bar.className = !bat ? '' : pct < 20 ? 'bad' : pct < 40 ? 'warn' : 'ok'
+
+      const aud = live.audio, pb = live.playback
+      document.getElementById('micSub').textContent = aud ? `${aud.sample_rate/1000}kHz ${aud.channels}ch ${aud.rms}` : '无'
+      document.getElementById('spkSub').textContent = pb ? `${pb.pkg || 'play'} ${pb.rms}` : '静'
+      document.getElementById('micBar').style.width = aud ? Math.min(100, aud.rms / 8) + '%' : '0'
+      document.getElementById('spkBar').style.width = pb ? Math.min(100, pb.rms / 8) + '%' : '0'
+
+      const imu = live.imu, mc = live.mc, body = live.body, led = live.led
+      const pose = [
+        live.action ? `动作 ${live.action.name}` : '',
+        mc ? `${mc.fallen ? '摔倒' : '未摔'} ${mc.moving ? '动' : '静'} 步${mc.steps}` : '',
+        body ? `站高 ${body.stand_height}` : '',
+      ].filter(Boolean)
+      document.getElementById('poseSub').innerHTML = (pose.join(' · ') || '—') +
+        (led ? ` <span class="swatch" style="background:rgb(${led.r},${led.g},${led.b})"></span>` : '')
+
+      const actName = (live.action && live.action.name) || (mc && mc.action) || '—'
+      const canWalk = /WALK_RUN|LOCOMOTION/.test(String(actName).toUpperCase())
+      const h = body && body.stand_height
+      const sent = live.vel ? live.vel.fwd : 0
+      const who = (live.vel && live.vel.source) || '—'
+      gait = { stand: Number(h) > 0, walk: canWalk }
+      const gh = document.getElementById('gaitHint')
+      gh.textContent = !mcReady ? '动作切换中'
+        : Number(h) === 0 ? `趴着 · 站高 ${h || 0} · 速度 ${sent}`
+        : canWalk ? `走跑 · 站高 ${h} · 速度 ${sent} (${who})`
+        : `已站 · 未走跑 (${actName})`
+      tagClass(gh, !mcReady ? 'warn' : canWalk ? 'ok' : '')
+
+      if (ui.mute && live.playback && Number(live.playback.rms) > 200) {
+        document.getElementById('voiceHint').textContent = '再点「打断」'
+      }
+
+      if (typeof live.mute === 'boolean') ui.mute = live.mute
+      if (live.volume != null) ui.volume = Math.max(0, Math.min(20, Number(live.volume)))
+      if (live.display && live.display.emoticon_id != null) ui.emotion = live.display.emoticon_id
+      if (live.tts && live.tts.text) ui.speaking = true
+      if (live.playback) ui.speaking = true
+      if (!live.tts && !live.playback) ui.speaking = false
+      paintVoice()
+
+      lastFaces = live.faces || []
+      document.getElementById('camCap').textContent = lastFaces.length
+        ? `人脸 ${lastFaces.length} · ` + lastFaces.map(f => f.label || f.name || f.nickname || '生人').join('、')
+        : '无人脸'
+      drawFaces(lastFaces)
+      paintNowFaces(lastFaces)
+      drawTraj(live.traj || [])
+      syncMots(live.motions)
+      if (window.Q1Twin) window.Q1Twin.update(live)
+      if (window.Q1Gauge) window.Q1Gauge.update(live)
+      paintHome(live)
+      paintChain()
+
+      const diags = (live.diags || []).map(d => `${d.module}:${d.code} ${esc(d.info)}`).join('<br>') || '无'
+      setHtml('cardConn', `WiFi ${esc(meta.WIFI)}<br>${esc(meta.IP)}<br>负载 ${esc(meta.LOAD)}<br>${esc((meta.MODE||'').replace('export RUNNING_MODE=',''))}`)
+      setHtml('cardBody', body ? `前${body.bend_forward} 侧${body.bend_sideways}<br>腰${body.twist_waist} 头${body.turn_head}` : '—')
+      setHtml('cardVel', live.vel ? `横 ${live.vel.lat} m/s` : '—')
+      const fmtObj = o => o ? Object.entries(o).map(([k, v]) => `${k} ${typeof v === 'number' ? Math.round(v * 1000) / 1000 : v}`).join(' ') : '—'
+      setHtml('cardOdom', `odom ${fmtObj(live.odom)}<br>躯干 ${fmtObj(live.torso)}`)
+      setHtml('cardTouch', `摸头 ${live.touch ? JSON.stringify(live.touch) : '—'} 防摔 ${live.fall ?? 0}<br>舵机 ${live.servo ? live.servo.position : '—'}`)
+      setHtml('cardTts', `${esc((live.tts && live.tts.text) || '—')}<br>${esc((live.show && live.show.text) || '—')}`)
+      setHtml('cardConv', `${live.conv ? JSON.stringify(live.conv) : '—'}<br>${live.intent ? JSON.stringify(live.intent) : '—'}`)
+      setHtml('cardTask', `${live.task ? JSON.stringify(live.task) : '—'}<br>${live.imot ? JSON.stringify(live.imot) : ''}`)
+      setHtml('cardSys', `${live.sm ? JSON.stringify(live.sm) : '—'}<br>${live.robot ? JSON.stringify(live.robot) : ''}<br>场景 ${live.scene ? JSON.stringify(live.scene) : '—'} 事件 ${live.events ?? 0}`)
+      setHtml('cardCamMod', live.camera ? esc(JSON.stringify(live.camera)) : '—')
+      setHtml('cardAlerts', alerts.length
+        ? alerts.map(a => `<span class="${Number(a.level) === 1 ? 'warn' : 'bad'}">${esc(a.code)} ${esc(a.text)}</span>`).join('<br>')
+        : '无')
+      setHtml('cardDiags', diags)
+      setHtml('cardBlocked', instaLine(live) || '—')
+      const dt = document.getElementById('diagTag')
+      dt.textContent = `${(live.diags || []).length} 诊断 · ${alerts.length} 告警`
+      tagClass(dt, alerts.length ? 'bad' : '')
+
+      const joints = live.joints || []
+      const box = document.getElementById('jointsCard')
+      if (!joints.length) { box.style.display = 'none'; return }
+      box.style.display = ''
+      document.getElementById('joints').innerHTML = joints.map(j => {
+        const pct = Math.min(100, Math.abs(j.pos) * 50)
+        return `<div class="jbar"><b title="${esc(j.name)}">${esc(j.name)}</b><div class="bar"><i style="width:${pct}%"></i></div><span>${j.pos}</span></div>`
+      }).join('')
+    }
+
+    function instaLine(live) {
+      const i = live.insta
+      if (!i) return ''
+      return i.mode === 0 && i.state === 0 ? 'Insta360 空闲' : `Insta360 ${i.mode}/${i.state}`
+    }
+
+    let lastMapId = ''
+    function paintHome(live) {
+      const f = live.follow
+      const cands = live.candidates || []
+      const watchOk = document.getElementById('watchOk').checked
+      const fs = document.getElementById('followSub')
+      fs.textContent = f
+        ? `跟随 ${f.label}` + (cands.length ? ` · 候选 ${cands.length}` : '')
+        : (cands.length ? `候选 ${cands.length}` : '未启动')
+      tagClass(fs, f ? 'ok' : '')
+      document.getElementById('followCands').innerHTML = cands.map(c =>
+        `<button type="button" data-need-watch ${watchOk ? '' : 'disabled'} onclick="followGo(true, ${Number(c.id)||0}, event)">跟 ${esc(c.id)}</button>`
+      ).join('')
+      const m = live.map || {}
+      const info = live.map_info
+      const slam = live.slam && live.slam.msg
+      document.getElementById('mapSub').textContent =
+        `图 ${m.current || (info && info.name) || '—'}` +
+        (m.stage_label || m.state_label ? ` · ${m.stage_label || ''}${m.state_label || ''}` : '') +
+        (slam ? ` · SLAM ${slam}` : '') +
+        ((m.has_png || (info && info.w)) ? ` · ${(info && info.w) || m.w}×${(info && info.h) || m.h}` : '')
+      lastMapId = m.current || (info && info.id) || (live.maps && live.maps[0] && live.maps[0].id) || ''
+      const maps = live.maps || []
+      document.getElementById('mapList').innerHTML = maps.length
+        ? maps.map(x => `<button type="button" data-need-watch ${watchOk ? '' : 'disabled'} onclick="locateMap('${esc(x.id)}', event)">定位 ${esc(x.name || x.id)}</button>`).join('')
+        : ''
+      const pts = live.points || []
+      document.getElementById('pointList').innerHTML = pts.length
+        ? pts.map(p => `<button type="button" data-need-watch ${watchOk ? '' : 'disabled'} onclick="goPoint('${esc(p.name || p.id)}', event)">去 ${esc(p.name || p.id)}</button>`).join('')
+        : ''
+      const navi = live.navi
+      const fus = live.fusion
+      const ch = live.charge
+      const ns = document.getElementById('naviSub')
+      ns.textContent = [
+        navi ? (`导航 ${navi.label}` + (navi.desc ? ' ' + navi.desc : '')) : '',
+        fus ? (`避障 ${fus.label}`) : '',
+        ch ? (`充电桩 ${ch.label}`) : '',
+      ].filter(Boolean).join(' · ') || '导航空闲'
+      tagClass(ns, navi ? 'ok' : '')
+      document.getElementById('radarCap').textContent = fus
+        ? (fus.avoid ? '躲 · ' : '') + fus.label
+        : '无激光'
+      document.getElementById('headCap').textContent = live.imu ? `偏航 ${live.imu.yaw}°` : 'IMU —'
+      document.getElementById('roomCap').textContent = pts.length
+        ? `${pts.length} 点 · 可点`
+        : (m.has_png || (info && info.w) ? '无导航点' : '无底图')
+      /* 房间图 / 雷达 / 导航点三块同时空的时候，留一句话。
+         否则用户看到的是三块空白画布加一排按不动的按钮，只会以为自己不会玩 ——
+         用户原话就是「房间图 雷达 导航 那个我不知道怎么玩」。
+         实测（2026-09-14）这台机器人压根没在跑导航：ros2 node list 里没有任何
+         导航/SLAM/建图节点；/aima/algo/navi/state、/aima/coreon_fusion/state、
+         /aima/map/state 这些状态话题发布者全是 0；GetMapList 在服务列表里看得见
+         但 wait_for_service 返回 False。所以这不是接线问题，是这台机器当前没加载
+         导航能力 —— 该要什么，官方那份清单里写着。
+         一旦有图有数据，这行自己就收起来：常驻的说明文字就是废话。 */
+      const navEmpty = !navi && !fus && !pts.length && !(m.has_png || (info && info.w))
+      const nst = document.getElementById('navState')
+      nst.hidden = !navEmpty
+      if (navEmpty) {
+        nst.textContent = '机器人没在跑导航程序 · 所以这里是空的'
+        nst.title = '实测：ros2 node list 里没有导航 / SLAM / 建图节点；' +
+          '/aima/algo/navi/state、/aima/coreon_fusion/state、/aima/map/state 等状态话题发布者均为 0；' +
+          'GetMapList 出现在服务列表里但 wait_for_service 返回 False。\n' +
+          '也就是说当前固件没有加载导航能力，地图、雷达扇区、导航点自然都是空的。' +
+          '等它跑起来，这里会自动变成可点的房间图和雷达。'
+      }
+      if (window.Q1Room) window.Q1Room.draw(live)
+    }
+    function followPerc(on, ev) {
+      act(on ? '感知开' : '感知关', () => api('/api/follow', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ on: !!on, kind: 'perc', watch: document.getElementById('watchOk').checked })
+      }), ev && ev.currentTarget)
+    }
+    function followGo(on, id, ev) {
+      act(on ? '跟人走' : '停跟随', () => api('/api/follow', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ on: !!on, kind: 'follow', target_id: Number(id) || 0, watch: document.getElementById('watchOk').checked })
+      }), ev && ev.currentTarget)
+    }
+    function mapDo(cmd, ev) {
+      const name = (document.getElementById('mapName').value || '家里').trim()
+      const lab = cmd === 'start' ? '建图' : cmd === 'startauto' ? '自动建图' : cmd === 'save' ? '存图' : '取消建图'
+      act(lab, () => api('/api/map', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cmd, name, watch: document.getElementById('watchOk').checked })
+      }), ev && ev.currentTarget)
+    }
+    function naviDo(cmd, ev, name) {
+      const lab = cmd === 'name' ? ('去 ' + name) : cmd === 'charge' ? '回充' : cmd === 'stop' ? '停导航' : '取消导航'
+      act(lab, () => api('/api/navi', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cmd, name: name || '', watch: document.getElementById('watchOk').checked })
+      }), ev && ev.currentTarget)
+    }
+    function goPoint(name, ev) { naviDo('name', ev, name) }
+    function locateMap(id, ev) {
+      act('定位', () => api('/api/locate', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ on: true, map_id: id, watch: document.getElementById('watchOk').checked })
+      }), ev && ev.currentTarget)
+    }
+    function markHere(ev) {
+      if (!lastMapId) { receipt('wait', '无图', '先有地图'); return }
+      const name = (document.getElementById('mapName').value || '这里').trim()
+      act('记点', () => api('/api/navi_point', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ map_id: lastMapId, name, watch: document.getElementById('watchOk').checked })
+      }), ev && ev.currentTarget)
+    }
+
+    function renderCatalog(sections, filled) {
+      const host = document.getElementById('panels')
+      host.innerHTML = ''
+      sections.forEach(sec => {
+        const d = document.createElement('details')
+        d.className = 'fold'
+        const data = (filled && filled[sec.id]) || null
+        let extra = '<p class="empty">未采样</p>'
+        if (data && typeof data === 'object') {
+          extra = '<ul>' + Object.entries(data).map(([k,v]) => `<li><b>${esc(k)}</b> ${esc(typeof v === 'object' ? JSON.stringify(v) : v)}</li>`).join('') + '</ul>'
+        }
+        d.innerHTML = `<summary>${esc(sec.title)}</summary><div class="fold-body">${extra}</div>`
+        host.appendChild(d)
+      })
+    }
+
+    let catCache = null
+    let lastCat = 0
+    let liveWs = null
+    let liveWsOk = false
+    function applyLive(live) {
+      netOnline = !!live.online
+      setNet(netOnline, netOnline ? '在线' : '离线')
+      if (!netOnline) {
+        lastLiveAt = 0
+        document.getElementById('camCap').textContent = '机器离线'
+        document.getElementById('alertBar').hidden = true
+        return
+      }
+      showLive(live, live.meta || {})
+      if (!catCache) api('/api/catalog').then(c => { catCache = c }).catch(() => {})
+      if (catCache && Date.now() - lastCat > 12000) {
+        renderCatalog(catCache.sections, live.filled || {})
+        lastCat = Date.now()
+      }
+    }
+    function hookLive() {
+      if (liveWs && (liveWs.readyState === 0 || liveWs.readyState === 1)) return
+      const proto = location.protocol === 'https:' ? 'wss' : 'ws'
+      const ws = new WebSocket(proto + '://' + location.host + '/ws/live')
+      liveWs = ws
+      ws.onopen = () => { liveWsOk = true; paintLink() }
+      ws.onmessage = ev => {
+        try { applyLive(JSON.parse(ev.data)) } catch (e) {}
+      }
+      ws.onerror = () => {}
+      ws.onclose = () => {
+        liveWsOk = false
+        liveWs = null
+        paintLink()
+        schedule()
+        setTimeout(hookLive, 800)
+      }
+    }
+    function paintLink() {
+      const el = document.getElementById('linkLab')
+      const s = el.querySelector('span') || el
+      if (liveWsOk) { el.hidden = false; s.textContent = '推送' }
+      else if (rttMs != null) { el.hidden = false; s.textContent = '轮询 ' + Math.round(rttMs) + 'ms' }
+      else el.hidden = true
+    }
+    async function refresh() {
+      startCam()
+      hookLive()
+      try {
+        const live = await api('/api/live')
+        applyLive(live)
+      } catch (e) { log(e.message) }
+    }
+    async function tickLive() {
+      if (liveWsOk) return
+      const t0 = performance.now()
+      try {
+        const live = await api('/api/live')
+        rttMs = performance.now() - t0
+        paintLink()
+        applyLive(live)
+      } catch (e) {
+        setNet(false, '控台异常')
+        rttMs = null
+        paintLink()
+      }
+    }
+    function tickFresh() {
+      const el = document.getElementById('freshLab')
+      const s = el.querySelector('span')
+      if (!netOnline) { s.textContent = '断流'; el.classList.add('stale'); return }
+      if (!lastLiveAt) { s.textContent = '数据 —'; el.classList.remove('stale'); return }
+      const age = (Date.now() - lastLiveAt) / 1000
+      s.textContent = age < 1 ? age.toFixed(1) + 's' : Math.round(age) + 's'
+      el.classList.toggle('stale', age > 5)
+    }
+    /* 头摄：只能 fetch 读流，不能挂 <img src=/api/cam.mjpg>。
+       MJPEG 是永不结束的响应，挂在 <img> 上（实测：哪怕不插进 DOM 也一样）
+       会一直拖住文档的 load 事件 —— 页面早画完了，标签却永远转圈。
+       实测 img 卡死在 interactive，fetch 则 14ms 就 complete。
+       服务器每个分片都带了 Content-Length，按长度切即可，不用扫 JPEG 结束标记。 */
+    let camSize = { w: 0, h: 0 }
+    let camGen = 0, camCtrl = null
+    const LAT = new TextDecoder('latin1')
+    function takeJpeg(buf) {
+      const n = Math.min(buf.length, 1024)
+      const head = LAT.decode(buf.subarray(0, n))
+      const sep = head.indexOf('\r\n\r\n')
+      if (sep < 0) return buf.length >= 1024 ? { jpg: null, rest: buf.slice(n) } : null
+      const m = /content-length:\s*(\d+)/i.exec(head.slice(0, sep))
+      if (!m) return { jpg: null, rest: buf.slice(sep + 4) }
+      const len = Number(m[1]), start = sep + 4
+      if (buf.length < start + len) return null          // 还没收全，等下一块
+      return { jpg: buf.subarray(start, start + len), rest: buf.slice(start + len) }
+    }
+    function joinBytes(a, b) {
+      const out = new Uint8Array(a.length + b.length)
+      out.set(a, 0); out.set(b, a.length)
+      return out
+    }
+    /* 每次调用开一代新的流，上一代立刻作废并断开 —— 刷新按钮靠这个重连。 */
+    async function startCam() {
+      const gen = ++camGen
+      if (camCtrl) { try { camCtrl.abort() } catch (e) {} }
+      const cv = document.getElementById('cam')
+      const box = document.getElementById('camBox')
+      const cap = document.getElementById('camCap')
+      const ctx = cv.getContext('2d')
+      while (gen === camGen) {
+        const ctrl = camCtrl = new AbortController()
+        try {
+          const res = await fetch('/api/cam.mjpg?t=' + Date.now(), { signal: ctrl.signal, cache: 'no-store' })
+          if (!res.ok || !res.body) throw new Error('HTTP ' + res.status)
+          const rd = res.body.getReader()
+          let buf = new Uint8Array(0)
+          for (;;) {
+            const { value, done } = await rd.read()
+            if (gen !== camGen) return
+            if (done) break
+            buf = joinBytes(buf, value)
+            for (;;) {
+              const part = takeJpeg(buf)
+              if (!part) break
+              buf = part.rest
+              if (!part.jpg) continue
+              let bmp
+              try { bmp = await createImageBitmap(new Blob([part.jpg], { type: 'image/jpeg' })) }
+              catch (e) { continue }                     // 坏帧跳过，别整条流重连
+              /* camSize 必须每帧都写、不能塞在 resize 分支里：
+                 canvas 初值是 1280x720，碰上同样 1280x720 的相机就永远不进
+                 这个分支，camSize 停在 0，人脸框整块不画。 */
+              camSize = { w: bmp.width, h: bmp.height }
+              if (cv.width !== bmp.width || cv.height !== bmp.height) {
+                cv.width = bmp.width; cv.height = bmp.height   // 改 width 会清空画布，得在 drawImage 前
+              }
+              ctx.drawImage(bmp, 0, 0)
+              bmp.close()
+              if (!box.classList.contains('has-frame')) {
+                box.classList.add('has-frame')
+                if (cap) cap.textContent = '实时'
+              }
+              drawFaces(lastFaces)
+            }
+          }
+        } catch (e) {
+          if (gen !== camGen) return
+        }
+        if (gen !== camGen) return
+        box.classList.remove('has-frame')
+        if (cap) cap.textContent = '重连中'
+        await new Promise(r => setTimeout(r, 1200))
+      }
+    }
+    function faceLoop() {
+      drawFaces(lastFaces)
+      requestAnimationFrame(faceLoop)
+    }
+    function schedule() {
+      if (timer) clearTimeout(timer)
+      if (!auto || liveWsOk) return
+      timer = setTimeout(async () => {
+        await tickLive()
+        schedule()
+      }, 300)
+    }
+    async function act(label, fn, btn) {
+      if (btn) btn.classList.add('sending')
+      receipt('pending', label + ' …', '')
+      try {
+        const r = await fn()
+        log(r)
+        if (r && r.ok === false) receipt('bad', label + ' ✕', cut(r.detail, 60))
+        else receipt('ok', label + ' ✓', '')
+        return r
+      } catch (e) {
+        log(e.message)
+        receipt('bad', label + ' ✕', cut(e.message || e, 60))
+      } finally {
+        if (btn) btn.classList.remove('sending')
+        paintVoice()
+      }
+    }
+    function cropFace(f) {
+      const cv = document.getElementById('cam')
+      if (!camSize.w || !f.w || !f.h) return ''
+      if (Number(f.w) < 36 || Number(f.h) < 36) return ''
+      const pad = 16
+      const x = Math.max(0, Number(f.x) - pad)
+      const y = Math.max(0, Number(f.y) - pad)
+      const w = Math.min(camSize.w - x, Number(f.w) + pad * 2)
+      const h = Math.min(camSize.h - y, Number(f.h) + pad * 2)
+      if (w < 24 || h < 24) return ''
+      const c = document.createElement('canvas')
+      c.width = Math.max(1, w)
+      c.height = Math.max(1, h)
+      const ctx = c.getContext('2d')
+      ctx.drawImage(cv, x, y, w, h, 0, 0, w, h)   // canvas 当 drawImage 的源一样合法
+      const pix = ctx.getImageData(0, 0, Math.min(w, 24), Math.min(h, 24)).data
+      let sum = 0, n = 0
+      for (let i = 0; i < pix.length; i += 4) { sum += (pix[i] + pix[i+1] + pix[i+2]) / 3; n += 1 }
+      if (n && sum / n < 22) return ''
+      return c.toDataURL('image/jpeg', 0.84)
+    }
+    function paintPeople() {
+      const box = document.getElementById('peopleList')
+      if (!peopleBook.length) { box.innerHTML = '<p class="empty">无记录</p>'; return }
+      box.innerHTML = peopleBook.map(p => {
+        const src = '/api/people/' + encodeURIComponent(p.id) + '.jpg?t=' + Math.round(p.seen || p.kept || 0)
+        return `<article class="person" data-id="${esc(p.id)}">
+          <img src="${src}" alt="${esc(p.name || '生人')}" onerror="this.style.opacity=.2" />
+          <input type="text" value="${esc(p.name || '')}" placeholder="名字" aria-label="给这张脸起名" />
+          <div class="row">
+            <button class="btn sm" type="button" data-save>记下</button>
+            <button class="btn sm" type="button" data-del>丢掉</button>
+          </div>
+        </article>`
+      }).join('')
+      box.querySelectorAll('.person').forEach(el => {
+        const pid = el.dataset.id
+        el.querySelector('[data-save]').onclick = () => namePerson(pid, el.querySelector('input').value)
+        el.querySelector('[data-del]').onclick = () => dropPerson(pid)
+        el.querySelector('input').addEventListener('change', ev => namePerson(pid, ev.target.value))
+      })
+    }
+    function paintNowFaces(faces) {
+      const box = document.getElementById('nowFaces')
+      document.getElementById('faceCount').textContent = faces.length
+        ? `${faces.length} 张 · 本子 ${peopleBook.length}`
+        : `本子 ${peopleBook.length}`
+      if (!faces.length) { box.innerHTML = ''; return }
+      box.innerHTML = faces.map((f, i) => {
+        const lab = f.label || '脸'
+        return `<button type="button" data-i="${i}">留下「${esc(lab)}」</button>`
+      }).join('')
+      box.querySelectorAll('button').forEach(b => {
+        b.onclick = () => keepFace(faces[Number(b.dataset.i)], true)
+      })
+    }
+    async function loadPeople() {
+      try {
+        const r = await api('/api/people')
+        peopleBook = r.people || []
+        peopleBook.forEach(p => { if (p.id) keptIds.add(p.id) })
+        paintPeople()
+      } catch (e) { log(e.message) }
+    }
+    async function keepFace(f, force) {
+      const fid = String((f && f.id) || '')
+      if (!force && fid && keptIds.has(fid)) return
+      const image = cropFace(f)
+      try {
+        const r = await api('/api/people', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: fid,
+            name: f.book_name || f.nickname || f.name || '',
+            image,
+            x: f.x || 0, y: f.y || 0, w: f.w || 0, h: f.h || 0,
+          }),
+        })
+        if (r.person && r.person.id) keptIds.add(r.person.id)
+        await loadPeople()
+        if (force) receipt('ok', '已留下 ✓', '')
+      } catch (e) { log(e.message) }
+    }
+    let keepBusy = false
+    async function keepNewFaces(faces) {
+      if (keepBusy) return
+      keepBusy = true
+      try {
+        for (const f of faces) {
+          if (!f.id || keptIds.has(f.id) || f.known) continue
+          if (!cropFace(f)) continue
+          await keepFace(f, false)
+        }
+      } finally { keepBusy = false }
+    }
+    async function namePerson(pid, name) {
+      try {
+        await api('/api/people/' + encodeURIComponent(pid) + '/name', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name }),
+        })
+        await loadPeople()
+        receipt('ok', '已记名 ✓', cut(name, 20))
+      } catch (e) { log(e.message) }
+    }
+    async function dropPerson(pid) {
+      try {
+        await api('/api/people/' + encodeURIComponent(pid), { method: 'DELETE' })
+        keptIds.delete(pid)
+        await loadPeople()
+      } catch (e) { log(e.message) }
+    }
+    /* 字体表在 load 之后才插进来：插进来的样式表不参与本文档的加载计时，
+       所以它超时与否都不影响标签页转不转圈。3 秒兜底是防 load 万一不来。 */
+    function loadFonts() {
+      if (document.getElementById('fontCss')) return
+      const l = document.createElement('link')
+      l.id = 'fontCss'
+      l.rel = 'stylesheet'
+      l.href = 'https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;700&family=Space+Grotesk:wght@600;700&display=swap'
+      document.head.appendChild(l)
+    }
+    if (document.readyState === 'complete') loadFonts()
+    else {
+      window.addEventListener('load', loadFonts, { once: true })
+      setTimeout(loadFonts, 3000)
+    }
+
+    document.getElementById('btnAuto').classList.add('on')
+    paintVoice()
+    syncWatch()
+    startCam()
+    loadPeople()
+    hookLive()
+    schedule()
+    setInterval(tickFresh, 500)
+    requestAnimationFrame(faceLoop)
+    if (window.Q1Gauge) window.Q1Gauge.boot()
+    if (window.Q1Talk) window.Q1Talk.boot()
+
+    /* 左列钉住时要让开顶栏，而顶栏高度是会变的：回执条从「待命」变成
+       「遥控 ✓ 三秒送达」会换行，告警条一出来还会更高。写死一个数，
+       告警出现的那一瞬间左列就被顶栏压住一截。所以量出来写进 --topH。
+       监听 window 的 resize 之外还要盯 topBar 自己：顶栏变高的时候
+       窗口尺寸并没有变。
+
+       写成具名函数再调用，不写成 (function(){...})()：这个文件通篇不带分号，
+       上一个语句是 window.Q1Talk.boot()，紧跟一个左括号会被解析成
+       「调用 boot() 的返回值」—— 实测就是 TypeError: window.Q1Talk.boot(...) is not a function，
+       而且因为异常冒泡出顶层，这行往后的顶层语句整段没执行。 */
+    function pinTop() {
+      const bar = document.getElementById('topBar')
+      if (!bar) return
+      const set = () => document.documentElement.style.setProperty(
+        '--topH', Math.round(bar.getBoundingClientRect().height) + 'px')
+      set()
+      if (window.ResizeObserver) new ResizeObserver(set).observe(bar)
+      window.addEventListener('resize', set)
+    }
+    pinTop()
+    setTimeout(() => {
+      if (!window.Q1Twin) {
+        document.getElementById('twinPanel').classList.add('twin-down')
+        document.getElementById('twinCap').textContent = '离线'
+      }
+    }, 3500)
+
+    /* 画面：抓拍 + 全屏 */
+    async function snap(ev) {
+      const btn = ev && ev.currentTarget
+      if (btn) btn.classList.add('sending')
+      try {
+        const r = await fetch('/api/snapshot.jpg?t=' + Date.now())
+        if (!r.ok) throw new Error('HTTP ' + r.status)
+        const b = await r.blob()
+        if (!b.size) throw new Error('空帧')
+        const url = URL.createObjectURL(b)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = 'q1-' + new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19) + '.jpg'
+        document.body.appendChild(a); a.click(); a.remove()
+        setTimeout(() => URL.revokeObjectURL(url), 4000)
+        receipt('ok', '抓拍 ✓', Math.round(b.size / 1024) + 'KB')
+      } catch (e) {
+        receipt('bad', '抓拍 ✕', cut(e.message || e, 40))
+      } finally {
+        if (btn) btn.classList.remove('sending')
+      }
+    }
+    function toggleFs(on) {
+      const box = document.getElementById('camBox')
+      const ov = document.getElementById('fsOverlay')
+      const host = document.getElementById('camHost')
+      const next = typeof on === 'boolean' ? on : !fsOpen
+      if (next === fsOpen) return
+      fsOpen = next
+      if (next) { ov.appendChild(box); ov.hidden = false }
+      else { host.appendChild(box); ov.hidden = true }
+      requestAnimationFrame(() => drawFaces(lastFaces))
+    }
+
+    async function speak(ev) {
+      const text = document.getElementById('say').value.trim()
+      if (!text || ui.mute) {
+        receipt('wait', '未发送', ui.mute ? '静音中' : '内容为空')
+        return
+      }
+      const r = await act('说', () => api('/api/speak', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ text }) }), ev && ev.currentTarget)
+      if (r) { ui.speaking = !!r.ok; ui.hushed = false; paintVoice() }
+    }
+    async function stopTalk(ev) {
+      const r = await act('打断', () => api('/api/stop_talk', { method:'POST' }), ev && ev.currentTarget)
+      if (r) { ui.speaking = false; ui.hushed = true; paintVoice() }
+    }
+    async function toggleMute(ev) {
+      const next = !ui.mute
+      ui.mute = next; if (next) { ui.speaking = false; ui.hushed = true }; paintVoice()
+      const r = await act(next ? '静音' : '取消静音', () => api('/api/mute', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ mute: next }) }), ev && ev.currentTarget)
+      if (r && typeof r.mute === 'boolean') ui.mute = r.mute
+      else if (!r) ui.mute = !next
+      if (next && r) ui.volume = 0
+      paintVoice()
+    }
+    async function setVol(volume) {
+      ui.volume = volume; paintVoice()
+      await act('音量 ' + volume, () => api('/api/volume', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ volume }) }))
+    }
+    async function emotion(emotion_id, name, btn) {
+      ui.emotion = emotion_id; paintVoice()
+      await act('表情 ' + (name || emotion_id), () => api('/api/emotion', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ emotion_id }) }), btn)
+    }
+    async function setLight(mode, rgb, name, btn) {
+      ui.light = mode; paintVoice()
+      const body = Object.assign({ mode }, rgb || {})
+      await act('灯光 ' + (name || '自定义'), () => api('/api/light', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) }), btn)
+    }
+    function applyColor(ev) {
+      const hex = document.getElementById('ledc').value
+      const n = parseInt(hex.slice(1), 16)
+      setLight(17, { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 }, '涂色', ev && ev.currentTarget)
+    }
+    async function motion(motion_id, name, btn) {
+      if (!document.getElementById('watchOk').checked) {
+        receipt('bad', '未发送', '未安全确认')
+        return
+      }
+      await act('动作 ' + (name || motion_id), () => api('/api/motion', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ motion_id }) }), btn)
+    }
+
+    async function cmotion(rtype, name, btn) {
+      if (!document.getElementById('watchOk').checked) {
+        receipt('bad', '未发送', '未安全确认')
+        return
+      }
+      await act('动作 ' + name, () => api('/api/motion/custom', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ rtype, name }) }), btn)
+    }
+
+    async function mcAction(action_id, name, ev) {
+      if (!document.getElementById('watchOk').checked) {
+        receipt('bad', '未发送', '未安全确认')
+        return
+      }
+      if (!mcReady) {
+        receipt('wait', '未发送', '动作切换中')
+        return
+      }
+      const btn = ev && ev.currentTarget
+      await act(name || String(action_id), () => api('/api/mc_action', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ action_id }) }), btn)
+    }
+    async function estop(ev) {
+      const btn = ev && ev.currentTarget
+      keys.clear()
+      gait = { stand: false, walk: false }
+      sendDrive({ fwd: 0, lat: 0, yaw: 0 })
+      await act('急停', async () => {
+        const r = await api('/api/mc_action', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ action_id: 1008 }) })
+        if (padOn) await togglePad()
+        return r
+      }, btn)
+      paintChain()
+    }
+    function padVel() {
+      let fwd = 0, lat = 0, yaw = 0
+      if (keys.has('w') || keys.has('arrowup')) fwd += 0.28
+      if (keys.has('s') || keys.has('arrowdown')) fwd -= 0.22
+      if (keys.has('a') || keys.has('arrowleft')) lat += 0.22
+      if (keys.has('d') || keys.has('arrowright')) lat -= 0.22
+      if (keys.has('q')) yaw += 0.45
+      if (keys.has('e')) yaw -= 0.45
+      if (keys.has(' ')) fwd = lat = yaw = 0
+      return { fwd, lat, yaw }
+    }
+    let driveWs = null
+    function paintPadHint(v) {
+      const moving = v && (v.fwd || v.lat || v.yaw)
+      document.getElementById('padHint').textContent = moving
+        ? `发出 前${v.fwd} 横${v.lat} 转${v.yaw}`
+        : 'WASD 前后左右 · QE 转身 · 空格停'
+    }
+    function sendDrive(v) {
+      if (driveWs && driveWs.readyState === 1) {
+        driveWs.send(JSON.stringify(v))
+        paintPadHint(v)
+        return
+      }
+      api('/api/drive', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(v) })
+        .then(() => paintPadHint(v))
+        .catch(e => { log(e.message) })
+    }
+    function pumpPad() {
+      if (!padOn) return
+      sendDrive(padVel())
+    }
+    function bindDpad() {
+      const box = document.getElementById('dpad')
+      box.querySelectorAll('button[data-k]').forEach(b => {
+        const k = b.dataset.k
+        const down = ev => { ev.preventDefault(); keys.add(k); b.classList.add('hold'); pumpPad() }
+        const up = () => { keys.delete(k); b.classList.remove('hold'); pumpPad() }
+        b.addEventListener('pointerdown', down)
+        b.addEventListener('pointerup', up)
+        b.addEventListener('pointerleave', up)
+        b.addEventListener('pointercancel', up)
+      })
+    }
+    async function togglePad() {
+      if (!padOn && !document.getElementById('watchOk').checked) {
+        receipt('bad', '未开启', '未安全确认')
+        return
+      }
+      const btn = document.getElementById('btnPad')
+      if (!padOn) {
+        receipt('pending', '接通速度通道 …', '')
+        try {
+          await api('/api/drive', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ fwd:0, lat:0, yaw:0 }) })
+          await api('/api/drive/arm', { method:'POST' })
+        } catch (e) {
+          receipt('bad', '速度通道 ✕', cut(e.message || e, 60))
+          return
+        }
+        padOn = true
+        btn.classList.add('on')
+        btn.setAttribute('aria-pressed', 'true')
+        document.getElementById('topBar').classList.add('pad-on')
+        document.getElementById('dpad').hidden = false
+        document.getElementById('say').blur()
+        const proto = location.protocol === 'https:' ? 'wss' : 'ws'
+        driveWs = new WebSocket(proto + '://' + location.host + '/ws/drive')
+        driveWs.onopen = () => { padTimer = setInterval(pumpPad, 120) }
+        driveWs.onerror = () => receipt('bad', '速度通道 ✕', '关了再开')
+        driveWs.onclose = () => { if (padOn) receipt('wait', '速度通道断', '重开遥控') }
+        paintChain()
+        receipt('ok', '遥控 ✓', '')
+        return
+      }
+      padOn = false
+      btn.classList.remove('on')
+      btn.setAttribute('aria-pressed', 'false')
+      document.getElementById('topBar').classList.remove('pad-on')
+      document.getElementById('dpad').hidden = true
+      clearInterval(padTimer); padTimer = null; keys.clear()
+      sendDrive({ fwd:0, lat:0, yaw:0 })
+      api('/api/drive/disarm', { method:'POST' }).catch(() => {})
+      if (driveWs) { try { driveWs.close() } catch (e) {} driveWs = null }
+      paintChain()
+      receipt('ok', '遥控关 ✓', '')
+    }
+    function driveKey(ev) {
+      if (!padOn) return false
+      const k = ev.key.toLowerCase()
+      if (!'wasdqe '.includes(k) && !k.startsWith('arrow')) return false
+      ev.preventDefault()
+      return k
+    }
+    window.addEventListener('keydown', ev => {
+      if (ev.key === 'Escape') {
+        if (fsOpen) { toggleFs(false); return }
+        estop(); return
+      }
+      const k = driveKey(ev)
+      if (!k) return
+      keys.add(k)
+      pumpPad()
+    }, true)
+    window.addEventListener('keyup', ev => {
+      const k = ev.key.toLowerCase()
+      keys.delete(k)
+      if (padOn) pumpPad()
+    }, true)
+    window.addEventListener('blur', () => {
+      if (padOn) { keys.clear(); sendDrive({ fwd:0, lat:0, yaw:0 }) }
+    })
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden && padOn) { keys.clear(); sendDrive({ fwd:0, lat:0, yaw:0 }) }
+    })
+    bindDpad()
+    paintChain()
+    refresh()
+  </script>
+
+  <!-- three.js 走本地：这是台控制机器人的台子，不该因为境外 CDN 抽风就少一块。
+       实测 jsdelivr 首字节要 2.1 秒，而且这台机器到境外的出口时好时坏。
+       本地这份是 npm 上 three@0.160.1 的原样拷贝（含 LICENSE）。 -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "/static/vendor/three/three.module.js",
+      "three/addons/": "/static/vendor/three/jsm/"
+    }
+  }
+  </script>
+  <script type="module" src="/static/twin.js?v=20"></script>
+</body>
+</html>
