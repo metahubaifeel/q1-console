@@ -21,6 +21,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
+import mqtt_fleet
 import people as facebook
 
 ROOT = Path(__file__).resolve().parent
@@ -49,6 +50,9 @@ LAN_IFACE = os.environ.get("Q1_LAN_IFACE", "")
 # 机器人不在这台机器的网段上时（比如插在别的工作站上），可以走本地 SSH 隧道：
 # 隧道把机器人 22/2554/8799 映射到 127.0.0.1，这里只需要指定 SSH 的本地端口。
 SSH_PORT = os.environ.get("Q1_SSH_PORT", "")
+# 免密模式：配好 ssh key（ssh-copy-id run@<机器人>）就不用 Q1_PASS。
+# Windows 上没有 sshpass，走这条路。
+KEY_MODE = os.environ.get("Q1_SSH_KEY", "")
 # RTSP 路径名随机型不同：Q1 是单目 live_head_monocular_centra，T1 是左右目
 # live_head_stereo_left / _right（见机器人上的 rtsp_server_t1_v2d0_sub.yaml）。
 RTSP_PATH = os.environ.get("Q1_RTSP_PATH", "live_head_monocular_centra")
@@ -108,6 +112,13 @@ def _on_start():
     start_snapper()
     threading.Thread(target=live_pump, daemon=True).start()
     threading.Thread(target=lambda: ensure_cmd(), daemon=True).start()
+    # 机群状态走 MQTT 旁路，和上面那条 SSH 通道并行，互不依赖。
+    mqtt_fleet.fleet.start()
+
+
+@app.on_event("shutdown")
+def _on_stop():
+    mqtt_fleet.fleet.stop()
 
 
 class SpeakIn(BaseModel):
@@ -394,10 +405,18 @@ def _eat_drive(proc: subprocess.Popen) -> None:
         _drive_log_ev.set()
 
 
+def _require_auth() -> None:
+    """有密码，或者明确说了走免密（Q1_SSH_KEY），才继续。
+
+    以前这里一律要求 Q1_PASS，Windows 上没有 sshpass，等于整个控制台不可用。
+    """
+    if not PASS and not KEY_MODE:
+        raise HTTPException(500, "Q1_PASS missing（或设 Q1_SSH_KEY=1 走免密）")
+
+
 def ensure_drive() -> subprocess.Popen:
     global _drive_proc
-    if not PASS:
-        raise HTTPException(500, "Q1_PASS missing")
+    _require_auth()
     with _drive_lock:
         if _drive_proc is not None and _drive_proc.poll() is None:
             return _drive_proc
@@ -505,8 +524,7 @@ def _eat_cmd(proc: subprocess.Popen) -> None:
 
 def ensure_cmd() -> subprocess.Popen:
     global _cmd_proc
-    if not PASS:
-        raise HTTPException(500, "Q1_PASS missing")
+    _require_auth()
     with _cmd_lock:
         if _cmd_proc is not None and _cmd_proc.poll() is None:
             return _cmd_proc
@@ -591,8 +609,7 @@ def drive_line(line: str) -> None:
 
 
 def ssh(remote: str, timeout: int = 20) -> subprocess.CompletedProcess:
-    if not PASS:
-        raise HTTPException(500, "Q1_PASS missing")
+    _require_auth()
     return subprocess.run(
         _ssh_argv(remote),
         capture_output=True,
@@ -675,8 +692,7 @@ def ensure_live_daemon() -> None:
         if now - _daemon_boot_t < 60:
             return
         _daemon_boot_t = now
-        if not PASS:
-            raise HTTPException(500, "Q1_PASS missing")
+        _require_auth()
         for name in ("live_probe.py", "live_daemon.py", "mic_pump.py"):
             up = subprocess.run(
                 _ssh_argv(f"cat > /tmp/{name}"),
@@ -775,11 +791,17 @@ def _kill_stale_ffmpeg() -> None:
     if _cam_proc is not None and _cam_proc.poll() is None:
         _cam_proc.kill()
         _cam_proc = None
-    subprocess.run(
-        ["pkill", "-f", f"{RTSP_PATH} -frames:v 1"],
-        capture_output=True,
-        check=False,
-    )
+    # Windows 上没有 pkill。以前这里直接 subprocess.run(["pkill", ...]) 会抛
+    # FileNotFoundError，而它是 _cam_loop 的第一句，摄像头线程就此死掉——
+    # 表现为「页面能开、数据在刷、就是没有画面」。
+    if os.name == "nt":
+        cmd = ["taskkill", "/F", "/IM", "ffmpeg.exe"]
+    else:
+        cmd = ["pkill", "-f", f"{RTSP_PATH} -frames:v 1"]
+    try:
+        subprocess.run(cmd, capture_output=True, check=False, timeout=5)
+    except (OSError, subprocess.SubprocessError):
+        pass
 
 
 def _cam_loop() -> None:
@@ -1604,6 +1626,35 @@ async def drive_ws(ws: WebSocket):
             drive_send(0.0, 0.0, 0.0)
         except Exception:
             pass
+
+
+@app.get("/api/fleet")
+def api_fleet():
+    """全机群快照：在线、消息数、电量、当前动作。"""
+    return mqtt_fleet.fleet.snapshot()
+
+
+@app.websocket("/ws/fleet")
+async def fleet_ws(ws: WebSocket):
+    """机群状态推送。只在内容变化时发，30 秒没话说就发一次心跳。"""
+    await ws.accept()
+    last = None
+    last_ping = time.monotonic()
+    try:
+        while True:
+            snap = mqtt_fleet.fleet.snapshot()
+            body = json.dumps(snap, ensure_ascii=False, sort_keys=True)
+            now = time.monotonic()
+            if body != last:
+                await ws.send_text(body)
+                last = body
+                last_ping = now
+            elif now - last_ping >= 30:
+                await ws.send_text('{"ping":1}')
+                last_ping = now
+            await asyncio.sleep(1.0)
+    except WebSocketDisconnect:
+        pass
 
 
 if __name__ == "__main__":
